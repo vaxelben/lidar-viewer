@@ -36,6 +36,20 @@ jobs:
           # Pour un dépôt user/organization à la racine : /
           BASE_PATH: '/lidar-viewer/'
 
+      - name: Copy LFS files to dist
+        run: |
+          # Créer les dossiers nécessaires dans dist
+          mkdir -p dist/data/metz
+          # Copier les fichiers LFS depuis public vers dist
+          # Les fichiers LFS sont déjà téléchargés grâce à lfs: true dans checkout
+          if [ -d "public/data/metz" ]; then
+            cp public/data/metz/*.copc.laz dist/data/metz/ 2>/dev/null || true
+          fi
+          # Copier aussi laz-perf.wasm
+          if [ -f "public/laz-perf.wasm" ]; then
+            cp public/laz-perf.wasm dist/ 2>/dev/null || true
+          fi
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
