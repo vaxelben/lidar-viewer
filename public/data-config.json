@@ -1,5 +1,5 @@
 {
-  "dataBaseUrl": "https://cdn.jsdelivr.net/gh/vaxelben/lidar-viewer@main/public/data",
+  "dataBaseUrl": "https://cdn.jsdelivr.net/gh/vaxelben/lidar-viewer@main/public",
   "description": "Configuration pour les fichiers de données LiDAR. Utilise jsDelivr CDN qui supporte les requêtes HTTP Range nécessaires pour les fichiers COPC.LAZ.",
   "examples": {
     "local": "",
@@ -7,7 +7,7 @@
     "awsS3": "https://votre-bucket.s3.amazonaws.com/lidar-data",
     "googleCloudStorage": "https://storage.googleapis.com/votre-bucket/lidar-data",
     "cloudflareR2": "https://votre-compte.r2.cloudflarestorage.com/lidar-data",
-    "jsdelivr": "https://cdn.jsdelivr.net/gh/vaxelben/lidar-viewer@main/public/data"
+    "jsdelivr": "https://cdn.jsdelivr.net/gh/vaxelben/lidar-viewer@main/public"
   }
 }
 
