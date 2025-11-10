@@ -28,6 +28,7 @@ const virtualModulePlugin = (): Plugin => {
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: process.env.BASE_PATH || '/',
   plugins: [
     react(),
     virtualModulePlugin()

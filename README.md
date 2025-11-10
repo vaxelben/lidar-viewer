@@ -66,6 +66,36 @@ Le projet inclut des scripts Node.js pour prétraiter les fichiers LIDAR complex
 
 Pour plus d'informations, consultez la [documentation des scripts](scripts/README.md).
 
+## Déploiement sur GitHub Pages
+
+Le projet est configuré pour être déployé automatiquement sur GitHub Pages via GitHub Actions.
+
+### Activation
+
+1. **Activez GitHub Pages dans les paramètres du dépôt** :
+   - Allez dans Settings → Pages
+   - Source : sélectionnez "GitHub Actions"
+
+2. **Poussez vos changements** :
+   ```bash
+   git add .
+   git commit -m "Configure GitHub Pages deployment"
+   git push
+   ```
+
+3. **Le workflow se déclenchera automatiquement** et déploiera votre application sur :
+   `https://vaxelben.github.io/lidar-viewer/`
+
+### Fichiers volumineux (Git LFS)
+
+Les fichiers `.copc.laz` volumineux sont gérés avec Git LFS. Le workflow GitHub Actions télécharge automatiquement ces fichiers lors du déploiement.
+
+**Note** : Si vous avez un compte GitHub gratuit, vous disposez de :
+- 1 GB de stockage Git LFS
+- 1 GB de bande passante par mois
+
+Pour plus de détails, consultez [DEPLOYMENT.md](./DEPLOYMENT.md).
+
 ## Guide de développement
 
 Si vous souhaitez étendre cette application :
