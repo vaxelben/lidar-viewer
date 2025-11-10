@@ -86,13 +86,30 @@ Le projet est configuré pour être déployé automatiquement sur GitHub Pages v
 3. **Le workflow se déclenchera automatiquement** et déploiera votre application sur :
    `https://vaxelben.github.io/lidar-viewer/`
 
-### Fichiers volumineux (Git LFS)
+### Fichiers volumineux (GitHub Releases)
 
-Les fichiers `.copc.laz` volumineux sont gérés avec Git LFS. Le workflow GitHub Actions télécharge automatiquement ces fichiers lors du déploiement.
+⚠️ **Important** : GitHub Pages ne supporte pas Git LFS nativement. Les fichiers `.copc.laz` volumineux sont donc hébergés sur **GitHub Releases**.
 
-**Note** : Si vous avez un compte GitHub gratuit, vous disposez de :
-- 1 GB de stockage Git LFS
-- 1 GB de bande passante par mois
+**Configuration automatique** :
+- Le workflow GitHub Actions est configuré pour charger les fichiers depuis GitHub Releases
+- URL de base : `https://github.com/vaxelben/lidar-viewer/releases/download/v1.0.0-data`
+
+**Pour uploader vos fichiers vers GitHub Releases** :
+
+1. Installez [GitHub CLI](https://cli.github.com/) :
+   ```powershell
+   winget install --id GitHub.cli
+   gh auth login
+   ```
+
+2. Exécutez le script d'upload :
+   ```powershell
+   .\upload-to-github-releases.ps1
+   ```
+
+3. Le script uploadera automatiquement tous les fichiers `.copc.laz` depuis `public/data/`
+
+**Alternatives** : Si vous préférez utiliser un autre hébergement (AWS S3, Cloudflare R2, Google Cloud Storage), consultez [HEBERGEMENT_DONNEES.md](./HEBERGEMENT_DONNEES.md).
 
 Pour plus de détails, consultez [DEPLOYMENT.md](./DEPLOYMENT.md).
 
