@@ -1,0 +1,13 @@
+{
+  "dataBaseUrl": "",
+  "description": "Configuration pour les fichiers de données LiDAR. Si dataBaseUrl est vide, les fichiers seront chargés depuis le dossier public local. Sinon, utilisez une URL complète (ex: https://votre-cdn.com/lidar-data ou https://votre-bucket.s3.amazonaws.com/lidar-data)",
+  "examples": {
+    "local": "",
+    "githubReleases": "https://github.com/votre-username/votre-repo/releases/download/v1.0.0",
+    "awsS3": "https://votre-bucket.s3.amazonaws.com/lidar-data",
+    "googleCloudStorage": "https://storage.googleapis.com/votre-bucket/lidar-data",
+    "cloudflareR2": "https://votre-compte.r2.cloudflarestorage.com/lidar-data",
+    "jsdelivr": "https://cdn.jsdelivr.net/gh/votre-username/votre-repo@main/data"
+  }
+}
+

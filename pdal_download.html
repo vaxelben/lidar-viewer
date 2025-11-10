@@ -1,0 +1,1043 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Download &#8212; Point Data Abstraction Library (PDAL)</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="_static/jquery.js?v=5d32c60e"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+    <script src="_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="_static/togglebutton.js?v=4a39c7ea"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script async="async" src="_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'download';</script>
+    <link rel="icon" href="_static/favicon.ico"/>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="copyright" title="Copyright" href="copyright.html" />
+    <link rel="next" title="Quickstart" href="quickstart.html" />
+    <link rel="prev" title="About" href="about.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <script async type="text/javascript" src="/_/static/javascript/readthedocs-addons.js"></script><meta name="readthedocs-project-slug" content="pdal" /><meta name="readthedocs-version-slug" content="latest" /><meta name="readthedocs-resolver-filename" content="/download.html" /><meta name="readthedocs-http-status" content="200" /></head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search this book..."
+         aria-label="Search this book..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">Point Data Abstraction Library (PDAL)</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1">
+                <a class="reference internal" href="index.html">
+                    PDAL - Point Data Abstraction Library
+                </a>
+            </li>
+        </ul>
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Download</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Concepts</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="apps/index.html">Applications</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="apps/chamfer.html">chamfer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps/delta.html">delta</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps/density.html">density</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps/eval.html">eval</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps/ground.html">ground</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps/hausdorff.html">hausdorff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps/info.html">info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps/merge.html">merge</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps/pipeline.html">pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps/random.html">random</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps/sort.html">sort</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps/split.html">split</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps/tile.html">tile</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps/tindex.html">tindex</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps/translate.html">translate</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="pipeline.html">Pipeline</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="stages/stages.html">Stages</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="stages/readers.html">Readers</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.arrow.html">readers.arrow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.bpf.html">readers.bpf</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.buffer.html">readers.buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.copc.html">readers.copc</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.draco.html">readers.draco</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.ept.html">readers.ept</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.e57.html">readers.e57</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.faux.html">readers.faux</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.fbi.html">readers.fbi</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.gdal.html">readers.gdal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.hdf.html">readers.hdf</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.i3s.html">readers.i3s</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.ilvis2.html">readers.ilvis2</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.las.html">readers.las</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.matlab.html">readers.matlab</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.memoryview.html">readers.memoryview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.mbio.html">readers.mbio</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.nitf.html">readers.nitf</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.numpy.html">readers.numpy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.obj.html">readers.obj</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.optech.html">readers.optech</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.pcd.html">readers.pcd</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.pgpointcloud.html">readers.pgpointcloud</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.ply.html">readers.ply</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.pts.html">readers.pts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.ptx.html">readers.ptx</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.qfit.html">readers.qfit</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.rdb.html">readers.rdb</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.rxp.html">readers.rxp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.sbet.html">readers.sbet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.smrmsg.html">readers.smrmsg</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.slpk.html">readers.slpk</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.stac.html">readers.stac</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.terrasolid.html">readers.terrasolid</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.text.html">readers.text</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.tiledb.html">readers.tiledb</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/readers.tindex.html">readers.tindex</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filespec.html">Connecting to Azure Blob Storage Using a SAS Token</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="stages/writers.html">Writers</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="stages/writers.arrow.html">writers.arrow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/writers.bpf.html">writers.bpf</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/writers.copc.html">writers.copc</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/writers.draco.html">writers.draco</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/writers.ept_addon.html">writers.ept_addon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/writers.e57.html">writers.e57</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/writers.fbi.html">writers.fbi</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/writers.fbx.html">writers.fbx</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/writers.gdal.html">writers.gdal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/writers.gltf.html">writers.gltf</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/writers.las.html">writers.las</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/writers.matlab.html">writers.matlab</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/writers.nitf.html">writers.nitf</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/writers.null.html">writers.null</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/writers.ogr.html">writers.ogr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/writers.pcd.html">writers.pcd</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/writers.pgpointcloud.html">writers.pgpointcloud</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/writers.ply.html">writers.ply</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/writers.raster.html">writers.raster</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/writers.sbet.html">writers.sbet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/writers.text.html">writers.text</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/writers.tiledb.html">writers.tiledb</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="stages/filters.html">Filters</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.csf.html">filters.csf</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.pmf.html">filters.pmf</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.skewnessbalancing.html">filters.skewnessbalancing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.smrf.html">filters.smrf</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.sparsesurface.html">filters.sparsesurface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.trajectory.html">filters.trajectory</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.elm.html">filters.elm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.outlier.html">filters.outlier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.neighborclassifier.html">filters.neighborclassifier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.hag_delaunay.html">filters.hag_delaunay</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.hag_dem.html">filters.hag_dem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.hag_nn.html">filters.hag_nn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.colorinterp.html">filters.colorinterp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.colorization.html">filters.colorization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.cluster.html">filters.cluster</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.dbscan.html">filters.dbscan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.litree.html">filters.litree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.lloydkmeans.html">filters.lloydkmeans</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.approximatecoplanar.html">filters.approximatecoplanar</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.covariancefeatures.html">filters.covariancefeatures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.eigenvalues.html">filters.eigenvalues</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.estimaterank.html">filters.estimaterank</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.label_duplicates.html">filters.label_duplicates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.lof.html">filters.lof</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.miniball.html">filters.miniball</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.nndistance.html">filters.nndistance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.normal.html">filters.normal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.optimalneighborhood.html">filters.optimalneighborhood</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.planefit.html">filters.planefit</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.radialdensity.html">filters.radialdensity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.reciprocity.html">filters.reciprocity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.zsmooth.html">filters.zsmooth</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.griddecimation.html">filters.griddecimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.assign.html">filters.assign</a></li>
+
+
+
+
+
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.overlay.html">filters.overlay</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.ferry.html">filters.ferry</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.mortonorder.html">filters.mortonorder</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.randomize.html">filters.randomize</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.sort.html">filters.sort</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.cpd.html">filters.cpd</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.icp.html">filters.icp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.teaser.html">filters.teaser</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.projpipeline.html">filters.projpipeline</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.reprojection.html">filters.reprojection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.transformation.html">filters.transformation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.straighten.html">filters.straighten</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.georeference.html">filters.georeference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.h3.html">filters.h3</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.crop.html">filters.crop</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.geomdistance.html">filters.geomdistance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.decimation.html">filters.decimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.fps.html">filters.fps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.relaxationdartthrowing.html">filters.relaxationdartthrowing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.sample.html">filters.sample</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.dem.html">filters.dem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.iqr.html">filters.iqr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.mad.html">filters.mad</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.voxelcenternearestneighbor.html">filters.voxelcenternearestneighbor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.voxelcentroidnearestneighbor.html">filters.voxelcentroidnearestneighbor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.voxeldownsize.html">filters.voxeldownsize</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.expression.html">filters.expression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.head.html">filters.head</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.locate.html">filters.locate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.mongo.html">filters.mongo</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.range.html">filters.range</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.tail.html">filters.tail</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.chipper.html">filters.chipper</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.divider.html">filters.divider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.splitter.html">filters.splitter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.gpstimeconvert.html">filters.gpstimeconvert</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.groupby.html">filters.groupby</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.returns.html">filters.returns</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.separatescanline.html">filters.separatescanline</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.merge.html">filters.merge</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.hexbin.html">filters.hexbin</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.info.html">filters.info</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.stats.html">filters.stats</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.expressionstats.html">filters.expressionstats</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.delaunay.html">filters.delaunay</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.greedyprojection.html">filters.greedyprojection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.poisson.html">filters.poisson</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.faceraster.html">filters.faceraster</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.matlab.html">filters.matlab</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.python.html">filters.python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.julia.html">filters.julia</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stages/filters.streamcallback.html">filters.streamcallback</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="dimensions.html">Dimensions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python.html">Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="java.html">Java</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="tutorial/index.html">Tutorials</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorial/reading.html">Reading with PDAL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial/iowa-entwine.html">Reading data from EPT</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial/las.html">LAS Reading and Writing with PDAL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial/clipping/index.html">Clipping with Geometries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial/ground-filters.html">Ground Filter Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial/grid-shift.html">Applying a grid shift to point clouds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial/tindex/index.html">Working with large collections of data using <code class="docutils literal notranslate"><span class="pre">pdal</span> <span class="pre">tindex</span></code></a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="workshop/index.html">Workshop</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="workshop/agenda.html">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="workshop/lidar-introduction.html">Introduction to LiDAR</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="workshop/software.html">Software Installation</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="workshop/conda.html">Conda</a></li>
+<li class="toctree-l3"><a class="reference internal" href="workshop/qgis.html">QGIS</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="workshop/introduction/index.html">Getting Started</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="workshop/introduction/single-point.html">Printing the first point</a></li>
+<li class="toctree-l3"><a class="reference internal" href="workshop/introduction/metadata.html">Printing file metadata</a></li>
+<li class="toctree-l3"><a class="reference internal" href="workshop/introduction/near.html">Searching near a point</a></li>
+<li class="toctree-l3"><a class="reference internal" href="workshop/introduction/compression.html">Compression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="workshop/introduction/reprojection.html">Reprojection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="workshop/introduction/entwine.html">Entwine</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="workshop/manipulation/index.html">Manipulation</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="workshop/manipulation/boundary/boundary.html">Finding the boundary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="workshop/manipulation/clipping/clipping.html">Clipping data with polygons</a></li>
+<li class="toctree-l3"><a class="reference internal" href="workshop/manipulation/colorization/colorization.html">Colorizing points with imagery</a></li>
+<li class="toctree-l3"><a class="reference internal" href="workshop/manipulation/denoising/denoising.html">Removing noise</a></li>
+<li class="toctree-l3"><a class="reference internal" href="workshop/manipulation/density/density.html">Visualizing acquisition density</a></li>
+<li class="toctree-l3"><a class="reference internal" href="workshop/manipulation/thinning/thinning.html">Thinning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="workshop/manipulation/ground/ground.html">Identifying ground</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="workshop/generation/index.html">Generation</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="workshop/generation/dtm/dtm.html">Generating a DTM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="workshop/generation/meshing/meshing.html">Creating surface meshes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="workshop/generation/rasterize/rasterize.html">Rasterizing Attributes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="workshop/generation/python/histogram.html">Plotting a histogram</a></li>
+<li class="toctree-l3"><a class="reference internal" href="workshop/generation/georeferencing/index.html">Georeferencing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="workshop/generation/batch_processing/batch-processing.html">Batch Processing</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="workshop/capstone.html">Final Project</a></li>
+<li class="toctree-l2"><a class="reference internal" href="workshop/notes.html">Notes</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="community.html">Community</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="api/index.html">API</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="api/cpp/index.html">C++ API</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/bounds.html"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">pdal::BOX2D</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/charbuf.html"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">pdal::Charbuf</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/columnpointtable.html"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">pdal::ColumnPointTable</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/dimension.html"><code class="docutils literal notranslate"><span class="pre">pdal::Dimension</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/extractor.html"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">pdal::Extractor</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/fileutils.html"><code class="docutils literal notranslate"><span class="pre">pdal::FileUtils</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/filter.html"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">pdal::Filter</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/istream.html"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">pdal::IStream</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/log.html"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">pdal::Log</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/metadata.html"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">pdal::Metadata</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/options.html"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">pdal::Options</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/pointtable.html"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">pdal::PointTable</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/pointview.html"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">pdal::PointView</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/programargs.html"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">pdal::ProgramArgs</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/reader.html"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">pdal::Reader</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/rowpointtable.html"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">pdal::RowPointTable</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/stage.html"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">pdal::Stage</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/stagefactory.html"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">pdal::StageFactory</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/utils.html"><code class="docutils literal notranslate"><span class="pre">pdal::Utils</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/writer.html"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">pdal::Writer</span></code></a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="api/transition/index.html">libLAS C API to PDAL transition guide</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="development/index.html">Development</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="development/overview.html">PDAL Architecture Overview</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="development/compilation/index.html">Compilation</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="development/compilation/unix.html">Unix Compilation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="development/compilation/windows.html">Building Under Windows</a></li>
+<li class="toctree-l3"><a class="reference internal" href="development/compilation/dependencies.html">Dependencies</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="development/documentation-quickstart.html">Documentation Quickstart</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development/errorhandling.html">Errors and Error Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development/metadata.html">Metadata</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development/writing.html">Writing with PDAL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development/plugins.html">Writing and building a PDAL Plugin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development/writing-filter.html">Writing a filter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development/writing-kernel.html">Writing a kernel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development/writing-reader.html">Writing a reader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development/writing-writer.html">Writing a writer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development/cmake.html">CMake</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="project/index.html">Project</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="project/conventions.html">Coding Conventions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="project/contributors.html">Contributors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="project/docs.html">Docs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="project/docker.html">Building Docker Containers for PDAL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="project/alpine.html">Alpine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="project/testing.html">Testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="project/integration.html">Continuous Integration</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="copyright.html">License</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="references.html">References</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/PDAL/PDAL" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/PDAL/PDAL/edit/master/book/download.md" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/PDAL/PDAL/issues/new?title=Issue%20on%20page%20%2Fdownload.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="_sources/download.md" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.md</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Download</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#current-release-s">Current Release(s)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#past-releases">Past Releases</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#development-source">Development Source</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#binaries">Binaries</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#windows">Windows</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#rpms">RPMs</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#alpine">Alpine</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#conda">Conda</a></li>
+</ul>
+</li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="download">
+<span id="id1"></span><h1>Download<a class="headerlink" href="#download" title="Link to this heading">#</a></h1>
+<section id="current-release-s">
+<h2>Current Release(s)<a class="headerlink" href="#current-release-s" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>2024-09-05</strong> <a class="reference external" href="https://github.com/PDAL/PDAL/releases/download/2.8.0/PDAL-2.8.0-src.tar.bz2">PDAL-2.8.0-src.tar.bz2</a> <a class="reference external" href="https://github.com/PDAL/PDAL/releases/tag/2.8.0">Release Notes</a> (<a class="reference external" href="https://github.com/PDAL/PDAL/releases/download/2.8.0/PDAL-2.8.0-src.tar.bz2.md5">md5</a>)</p></li>
+</ul>
+</section>
+<section id="past-releases">
+<h2>Past Releases<a class="headerlink" href="#past-releases" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>2024-03-27</strong> <a class="reference external" href="https://github.com/PDAL/PDAL/releases/download/2.7.1/PDAL-2.7.1-src.tar.bz2">PDAL-2.7.1-src.tar.bz2</a></p></li>
+<li><p><strong>2024-02-05</strong> <a class="reference external" href="https://github.com/PDAL/PDAL/releases/download/2.6.3/PDAL-2.6.3-src.tar.bz2">PDAL-2.6.3-src.tar.bz2</a></p></li>
+<li><p><strong>2023-08-18</strong> <a class="reference external" href="https://github.com/PDAL/PDAL/releases/download/2.5.6/PDAL-2.5.6-src.tar.bz2">PDAL-2.5.6-src.tar.bz2</a></p></li>
+<li><p><strong>2022-03-18</strong> <a class="reference external" href="https://github.com/PDAL/PDAL/releases/download/2.4.0/PDAL-2.4.0-src.tar.bz2">PDAL-2.4.0-src.tar.bz2</a></p></li>
+</ul>
+</section>
+<section id="development-source">
+<span id="source"></span><h2>Development Source<a class="headerlink" href="#development-source" title="Link to this heading">#</a></h2>
+<p>The main repository for PDAL is located on github at
+<a class="github reference external" href="https://github.com/PDAL/PDAL">PDAL/PDAL</a>.</p>
+<p>You can obtain a copy of the active source code by issuing the following
+command</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">PDAL</span><span class="o">/</span><span class="n">PDAL</span><span class="o">.</span><span class="n">git</span>
+</pre></div>
+</div>
+</section>
+<section id="binaries">
+<h2>Binaries<a class="headerlink" href="#binaries" title="Link to this heading">#</a></h2>
+<p>In this section we list a number of the binary distributions of PDAL. The table
+below is intended to provide an overview of some of the differences between the
+various distributions, as not all features can be enabled in every
+distribution. This table only summarizes the differences between distributions,
+and there are several plugins that are not built for any of the distributions.
+These include Delaunay, MATLAB, MBIO, OpenSceneGraph, RDBLIB,
+and RiVLib. To enable any of these plugins, the reader will need to install any
+required dependencies and build PDAL from source.</p>
+<div class="pst-scrollable-table-container"><table class="table" id="id3">
+<caption><span class="caption-number">Table 1 </span><span class="caption-text">PDAL Distribution Feature Comparison</span><a class="headerlink" href="#id3" title="Link to this table">#</a></caption>
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>Docker</p></th>
+<th class="head"><p>RPMs</p></th>
+<th class="head"><p>Alpine</p></th>
+<th class="head"><p><a class="reference internal" href="#conda"><span class="std std-ref">Conda</span></a></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Platform(s)</p></td>
+<td><p>linux</p></td>
+<td><p>linux</p></td>
+<td><p>linux</p></td>
+<td><p>win64, mac, linux</p></td>
+</tr>
+<tr class="row-odd"><td><p>PDAL version</p></td>
+<td><p>2.8</p></td>
+<td></td>
+<td><p>2.6</p></td>
+<td><p>2.8</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="stages/readers.arrow.html#readers-arrow"><span class="std std-ref">readers.arrow</span></a>, <a class="reference internal" href="stages/writers.arrow.html#writers-arrow"><span class="std std-ref">writers.arrow</span></a></p></td>
+<td></td>
+<td></td>
+<td></td>
+<td><p>X</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="stages/filters.cpd.html#filters-cpd"><span class="std std-ref">filters.cpd</span></a></p></td>
+<td></td>
+<td></td>
+<td><p>X</p></td>
+<td><p>X</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="stages/readers.draco.html#readers-draco"><span class="std std-ref">readers.draco</span></a>, <a class="reference internal" href="stages/writers.draco.html#writers-draco"><span class="std std-ref">writers.draco</span></a></p></td>
+<td></td>
+<td></td>
+<td></td>
+<td><p>X</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="stages/readers.e57.html#readers-e57"><span class="std std-ref">readers.e57</span></a>, <a class="reference internal" href="stages/writers.e57.html#writers-e57"><span class="std std-ref">writers.e57</span></a></p></td>
+<td><p>X</p></td>
+<td></td>
+<td></td>
+<td><p>X</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="stages/readers.hdf.html#readers-hdf"><span class="std std-ref">readers.hdf</span></a></p></td>
+<td><p>X</p></td>
+<td></td>
+<td></td>
+<td><p>X</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="stages/readers.i3s.html#readers-i3s"><span class="std std-ref">readers.i3s</span></a>, <a class="reference internal" href="stages/readers.slpk.html#readers-slpk"><span class="std std-ref">readers.slpk</span></a></p></td>
+<td></td>
+<td></td>
+<td></td>
+<td><p>X</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="stages/readers.nitf.html#readers-nitf"><span class="std std-ref">readers.nitf</span></a>, <a class="reference internal" href="stages/writers.nitf.html#writers-nitf"><span class="std std-ref">writers.nitf</span></a></p></td>
+<td><p>X</p></td>
+<td></td>
+<td></td>
+<td><p>X</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="stages/readers.pgpointcloud.html#readers-pgpointcloud"><span class="std std-ref">readers.pgpointcloud</span></a>, <a class="reference internal" href="stages/writers.pgpointcloud.html#writers-pgpointcloud"><span class="std std-ref">writers.pgpointcloud</span></a></p></td>
+<td><p>X</p></td>
+<td></td>
+<td><p>X</p></td>
+<td><p>X</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="stages/readers.tiledb.html#readers-tiledb"><span class="std std-ref">readers.tiledb</span></a>, <a class="reference internal" href="stages/writers.tiledb.html#writers-tiledb"><span class="std std-ref">writers.tiledb</span></a></p></td>
+<td><p>X</p></td>
+<td></td>
+<td></td>
+<td><p>X</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="stages/filters.trajectory.html#filters-trajectory"><span class="std std-ref">filters.trajectory</span></a></p></td>
+<td></td>
+<td></td>
+<td></td>
+<td><p>X</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="windows">
+<h3>Windows<a class="headerlink" href="#windows" title="Link to this heading">#</a></h3>
+<p>Windows builds are available via <a class="reference external" href="https://anaconda.org/conda-forge/pdal">Conda Forge</a> (64-bit only). See the
+<a class="reference internal" href="#conda"><span class="std std-ref">Conda</span></a> for more detailed information.</p>
+</section>
+<section id="rpms">
+<h3>RPMs<a class="headerlink" href="#rpms" title="Link to this heading">#</a></h3>
+<p>RPMs for PDAL are available at
+<a class="reference external" href="https://copr.fedorainfracloud.org/coprs/neteler/pdal/">https://copr.fedorainfracloud.org/coprs/neteler/pdal/</a>.</p>
+</section>
+<section id="alpine">
+<h3>Alpine<a class="headerlink" href="#alpine" title="Link to this heading">#</a></h3>
+<p>[Alpine] is a linux distribution that is compact and frequently used with
+Docker images. Alpine packages for PDAL are available at
+<a class="reference external" href="https://pkgs.alpinelinux.org/packages?name=*pdal*&amp;amp;branch=edge">https://pkgs.alpinelinux.org/packages?name=*pdal*&amp;branch=edge</a>.</p>
+<p>Users have a choice of three separate packages.</p>
+<p>1. <code class="docutils literal notranslate"><span class="pre">pdal</span></code> will install the PDAL binaries only, and is suitable for users who
+will be using the PDAL command line applications.</p>
+<p>2. <code class="docutils literal notranslate"><span class="pre">pdal-dev</span></code> will install development files which are required for users
+building their own software that will link against PDAL.</p>
+<ol class="arabic simple" start="3">
+<li><p><code class="docutils literal notranslate"><span class="pre">py-pdal</span></code> will install the PDAL Python extension.</p></li>
+</ol>
+<p>Note that the PDAL package now resides in Alpine’s <code class="docutils literal notranslate"><span class="pre">edge/community</span></code> repository,
+which must be added to your Alpine repositories list. Information on adding and
+updating repositories can be found in the Alpine documentation.</p>
+<p>To install one or more packages on Alpine, use the following command.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">apk</span> <span class="n">add</span> <span class="p">[</span><span class="n">package</span><span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>For example, the following command will install both the PDAL application and
+the Python extension.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">apk</span> <span class="n">add</span> <span class="n">py</span><span class="o">-</span><span class="n">pdal</span> <span class="n">pdal</span>
+</pre></div>
+</div>
+</section>
+<section id="conda">
+<span id="id2"></span><h3>Conda<a class="headerlink" href="#conda" title="Link to this heading">#</a></h3>
+<p>[Conda] can be used on multiple platforms (Windows, macOS, and Linux) to
+install software packages and manage environments. Conda packages for PDAL are
+available at <a class="reference external" href="https://anaconda.org/conda-forge/pdal">https://anaconda.org/conda-forge/pdal</a>.</p>
+<p>Conda installation instructions can be found on the Conda website. The
+instructions below assuming you have a working Conda installation on your
+system.</p>
+<p>Users have a choice of two separate packages.</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">pdal</span></code> will install the PDAL binaries <strong>and</strong> development files.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">python-pdal</span></code> will install the PDAL Python extension.</p></li>
+</ol>
+<p>To install one or more Conda packages, use the following command.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">install</span> <span class="p">[</span><span class="o">-</span><span class="n">c</span> <span class="n">channel</span><span class="p">]</span> <span class="p">[</span><span class="n">package</span><span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Because the PDAL package (and it’s dependencies) live in the <a class="reference external" href="https://anaconda.org/conda-forge/pdal">Conda Forge</a>
+channel, the command to install both the PDAL application and the Python
+extension is</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">install</span> <span class="o">-</span><span class="n">c</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span> <span class="n">pdal</span> <span class="n">python</span><span class="o">-</span><span class="n">pdal</span> <span class="n">gdal</span>
+</pre></div>
+</div>
+<p>It is strongly recommended that you make use of Conda’s environment management
+system and install PDAL in a separate environment (i.e., not the base
+environment). Instructions can be found on the Conda website.</p>
+</section>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "binder-examples/jupyter-stacks-datascience",
+            ref: "master",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./."
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="about.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">About</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="quickstart.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Quickstart</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#current-release-s">Current Release(s)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#past-releases">Past Releases</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#development-source">Development Source</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#binaries">Binaries</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#windows">Windows</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#rpms">RPMs</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#alpine">Alpine</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#conda">Conda</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+<div class="extra_footer">
+  <a href="https://hobu.co/access.html"><img width="30px" src="./_static/logo/hobu-emblem-32x32.png" /></a> <a href="/copyright.html">Copyright</a> ©2025 <a href="https://github.com/abellgithub">Andrew Bell</a>, <a href="https://github.com/chambbj">Brad Chambers</a>, <a href="http://github.com/hobu">Howard Butler</a>, and <a href="https://github.com/PDAL/PDAL/graphs/contributors">others</a>
+
+</div>
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
