@@ -21,14 +21,18 @@ async function loadDataConfig(): Promise<DataConfig> {
   }
 
   try {
-    const response = await fetch('/data-config.json');
+    // Utiliser import.meta.env.BASE_URL pour supporter le base path de GitHub Pages
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    const configPath = `${baseUrl}data-config.json`.replace(/\/+/g, '/'); // Normaliser les slashes
+    const response = await fetch(configPath);
     if (!response.ok) {
       console.warn('Impossible de charger data-config.json, utilisation de la configuration par défaut');
       cachedConfig = { dataBaseUrl: '' };
       return cachedConfig;
     }
-    cachedConfig = await response.json();
-    return cachedConfig;
+    const config = await response.json() as DataConfig;
+    cachedConfig = config;
+    return config;
   } catch (error) {
     console.warn('Erreur lors du chargement de data-config.json:', error);
     cachedConfig = { dataBaseUrl: '' };
@@ -44,9 +48,14 @@ async function loadDataConfig(): Promise<DataConfig> {
 export async function resolveDataUrl(relativePath: string): Promise<string> {
   const config = await loadDataConfig();
   
-  // Si aucune URL de base n'est configurée, utiliser le chemin relatif tel quel
+  // Si aucune URL de base n'est configurée, utiliser le chemin relatif avec le base path de Vite
   if (!config.dataBaseUrl || config.dataBaseUrl.trim() === '') {
-    return relativePath;
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    // Si le chemin commence par /, on le garde, sinon on l'ajoute au base path
+    if (relativePath.startsWith('/')) {
+      return `${baseUrl}${relativePath.slice(1)}`.replace(/\/+/g, '/');
+    }
+    return `${baseUrl}${relativePath}`.replace(/\/+/g, '/');
   }
 
   // Nettoyer le chemin relatif (enlever le slash initial si présent)
@@ -69,7 +78,13 @@ export async function resolveDataUrls(relativePaths: string[]): Promise<string[]
   const config = await loadDataConfig();
   
   if (!config.dataBaseUrl || config.dataBaseUrl.trim() === '') {
-    return relativePaths;
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    return relativePaths.map(path => {
+      if (path.startsWith('/')) {
+        return `${baseUrl}${path.slice(1)}`.replace(/\/+/g, '/');
+      }
+      return `${baseUrl}${path}`.replace(/\/+/g, '/');
+    });
   }
 
   const baseUrl = config.dataBaseUrl.endsWith('/') 

@@ -137,8 +137,11 @@ async function initLazPerf() {
   if (!lazPerfInstance) {
     console.log("Initialisation de laz-perf...");
     // Initialiser laz-perf avec le chemin vers le fichier WASM
+    // Utiliser import.meta.env.BASE_URL pour supporter le base path de GitHub Pages
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    const wasmPath = `${baseUrl}laz-perf.wasm`.replace(/\/+/g, '/');
     lazPerfInstance = await LazPerf.create({
-      'laz-perf.wasm': '/laz-perf.wasm'
+      'laz-perf.wasm': wasmPath
     });
     console.log("laz-perf initialisé avec succès");
   }

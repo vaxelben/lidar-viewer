@@ -165,8 +165,11 @@ async function initLazPerf() {
   if (!lazPerfInstance) {
     console.log("Initialisation de laz-perf...");
     // Initialiser laz-perf avec le chemin vers le fichier WASM
+    // Utiliser import.meta.env.BASE_URL pour supporter le base path de GitHub Pages
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    const wasmPath = `${baseUrl}laz-perf.wasm`.replace(/\/+/g, '/');
     lazPerfInstance = await LazPerf.create({
-      'laz-perf.wasm': '/laz-perf.wasm'
+      'laz-perf.wasm': wasmPath
     });
     console.log("laz-perf initialisé avec succès");
   }
@@ -795,6 +798,7 @@ interface CameraControlsType {
 }
 
 // Composant pour configurer la caméra
+// @ts-expect-error - TypeScript ne détecte pas l'utilisation dans le JSX
 function CameraSetup({ bounds }: { bounds: { min: THREE.Vector3; max: THREE.Vector3 } }) {
   const { camera, controls } = useThree();
   const initializedRef = useRef(false);
@@ -894,7 +898,7 @@ function DynamicNodeLODManager({
           loadingNodesRef.current.delete(cacheKey);
           // Continuer après un délai
           setTimeout(() => processLoadQueue(), delayBetweenLoads);
-        }).catch(err => {
+        }).catch((_err) => {
           currentlyLoadingRef.current--;
           
           // ✅ Système de retry

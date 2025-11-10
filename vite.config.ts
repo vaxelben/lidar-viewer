@@ -27,8 +27,13 @@ const virtualModulePlugin = (): Plugin => {
 }
 
 // https://vite.dev/config/
-export default defineConfig({
-  base: process.env.BASE_PATH || '/',
+export default defineConfig(() => {
+  // Lire BASE_PATH depuis les variables d'environnement
+  // En build, process.env est disponible via Vite
+  const basePath = (process.env as { BASE_PATH?: string }).BASE_PATH || '/';
+  
+  return {
+  base: basePath,
   plugins: [
     react(),
     virtualModulePlugin()
@@ -55,4 +60,5 @@ export default defineConfig({
       '@deck.gl/widgets': 'virtual:empty-module'
     }
   }
-})
+  };
+});

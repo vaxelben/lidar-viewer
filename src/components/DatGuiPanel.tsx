@@ -82,8 +82,8 @@ export function DatGuiPanel({
   maxAvailableLevel
 }: DatGuiPanelProps) {
   const guiRef = useRef<dat.GUI | null>(null);
-  const [fps, setFps] = useState(60);
-  const [frameTime, setFrameTime] = useState(16.7);
+  const [_fps, setFps] = useState(60);
+  const [_frameTime, setFrameTime] = useState(16.7);
 
   // Objet pour dat.gui (doit être un objet avec des propriétés mutables)
   const controlsRef = useRef({
