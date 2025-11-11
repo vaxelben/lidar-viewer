@@ -1,4 +1,4 @@
 {
-  "dataBaseUrl": "https://r2-proxy-worker.datawrap.workers.dev/",
+  "dataBaseUrl": "https://r2-proxy-worker.datawrap.workers.dev",
   "description": "Configuration pour les fichiers de données LiDAR hébergés sur Cloudflare R2"
 }
