@@ -109,7 +109,7 @@ const EDLShader = {
       float finalShade = 1.0;
       if (weightSum > 0.0) {
         float avgShade = shade / weightSum;
-        // ✅ Facteur ajusté : 50.0 au lieu de 300.0 pour un effet plus visible
+        // Facteur ajusté : 50.0 au lieu de 300.0 pour un effet plus visible
         // Plus le facteur est élevé, plus l'ombrage est fort
         finalShade = 1.0 - (avgShade * edlStrength * 50.0);
         finalShade = clamp(finalShade, 0.2, 1.0); // Limiter pour éviter le noir complet
@@ -266,7 +266,7 @@ async function loadLAZFile(
     // Retourner les données du cache
     const cached = loadedDataCache.get(cacheKey);
     if (cached) {
-      console.log(`✅ Données récupérées du cache pour ${url}`);
+      console.log(`Données récupérées du cache pour ${url}`);
       // S'assurer que les bounds sont des Vector3 valides
       return {
         ...cached,
@@ -281,7 +281,7 @@ async function loadLAZFile(
   // Vérifier si les données sont déjà en cache
   const cached = loadedDataCache.get(cacheKey);
   if (cached) {
-    console.log(`✅ Fichier déjà chargé (cache), retour immédiat pour ${url}`);
+    console.log(`Fichier déjà chargé (cache), retour immédiat pour ${url}`);
     // S'assurer que les bounds sont des Vector3 valides
     return {
       ...cached,
@@ -294,7 +294,7 @@ async function loadLAZFile(
   
   // Marquer comme en cours de chargement
   loadingCache.set(cacheKey, true);
-  console.log(`📥 Début du chargement du fichier avec copc.js: ${url}`);
+  console.log(`Début du chargement du fichier avec copc.js: ${url}`);
   
   try {
     // Initialiser laz-perf
@@ -340,7 +340,7 @@ async function loadLAZFile(
       
       const level = getNodeLevel(key);
       
-      // ⚡ Filtrer par niveau de détail (LOD)
+      // Filtrer par niveau de détail (LOD)
       if (level > maxLOD) {
         continue;
       }
@@ -362,7 +362,7 @@ async function loadLAZFile(
     
     // const maxPointsDisplay = maxPointsLimit === Infinity ? 'Illimité' : maxPointsLimit.toLocaleString('fr-FR');
     // const maxLODDisplay = maxLOD === Infinity ? 'Tous niveaux' : `Niveaux 0-${maxLOD}`;
-    // console.log(`📊 Statistiques de chargement:`);
+    // console.log(`Statistiques de chargement:`);
     // console.log(`  - Total de nodes disponibles: ${totalNodes}`);
     // console.log(`  - Niveau de détail max: ${maxLODDisplay}`);
     // console.log(`  - Nodes à charger: ${nodesToLoad.length}`);
@@ -371,7 +371,7 @@ async function loadLAZFile(
     // Afficher les statistiques par niveau
     // const levels = Object.keys(levelStats).map(Number).sort((a, b) => a - b);
     // if (levels.length > 0) {
-    //   console.log(`\n📈 Distribution par niveau:`);
+    //   console.log(`\nDistribution par niveau:`);
     //   for (const level of levels) {
     //     const stats = levelStats[level];
     //     console.log(`  Niveau ${level}: ${stats.count} nodes, ${stats.points.toLocaleString('fr-FR')} points`);
@@ -379,7 +379,7 @@ async function loadLAZFile(
     //   console.log('');
     // }
     
-    // ⚡ Grouper les nodes par niveau pour chargement progressif
+    // Grouper les nodes par niveau pour chargement progressif
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const nodesByLevel: { [level: number]: { key: string; node: any }[] } = {};
     for (const { key, node, level } of nodesToLoad) {
@@ -390,7 +390,7 @@ async function loadLAZFile(
     }
     
     const allLevels = Object.keys(nodesByLevel).map(Number).sort((a, b) => a - b);
-    // console.log(`🎯 Chargement par niveaux: ${allLevels.join(', ')}`);
+    // console.log(`Chargement par niveaux: ${allLevels.join(', ')}`);
     
     // Variables globales pour accumulation
     const allPositions = new Float32Array(estimatedTotalPoints * 3);
@@ -402,15 +402,15 @@ async function loadLAZFile(
     let totalPoints = 0;
     let hasRGBColors = false;
     
-    // ⚡ Chargement séquentiel (un node à la fois) pour éviter les erreurs "Failed to fetch"
+    // Chargement séquentiel (un node à la fois) pour éviter les erreurs "Failed to fetch"
     // Pas de parallélisation pour garantir la stabilité
     
-    // ⚡ Charger niveau par niveau (priorité au niveau 1)
+    // Charger niveau par niveau (priorité au niveau 1)
     for (const level of allLevels) {
       const levelNodes = nodesByLevel[level];
       const levelPointsStart = currentPointIndex;
       
-      // console.log(`\n📚 === Niveau ${level}: ${levelNodes.length} nodes ===`);
+      // console.log(`\n=== Niveau ${level}: ${levelNodes.length} nodes ===`);
       
       // Charger chaque node séquentiellement
       for (let i = 0; i < levelNodes.length; i++) {
@@ -491,7 +491,7 @@ async function loadLAZFile(
         }
       }
       
-      // ⚡ CALLBACK après chaque niveau chargé
+      // CALLBACK après chaque niveau chargé
       const levelPointsEnd = currentPointIndex;
       const levelPointCount = levelPointsEnd - levelPointsStart;
       
@@ -507,7 +507,7 @@ async function loadLAZFile(
           max: new THREE.Vector3(copc.header.max[0], copc.header.max[1], copc.header.max[2])
         };
         
-        console.log(`✅ Niveau ${level} terminé: ${levelPointCount.toLocaleString('fr-FR')} points`);
+        console.log(`Niveau ${level} terminé: ${levelPointCount.toLocaleString('fr-FR')} points`);
         
         levelCallback({
           level,
@@ -564,7 +564,7 @@ async function loadLAZFile(
       console.log("Aucune classification trouvée dans ce fichier");
     }
     
-    // ⚡ Les données sont déjà dans des TypedArrays pré-alloués !
+    // Les données sont déjà dans des TypedArrays pré-alloués !
     // Si le nombre de points chargés est inférieur à l'estimation, on crée des vues plus petites
     const positions = totalPoints < estimatedTotalPoints 
       ? allPositions.slice(0, totalPoints * 3)
@@ -596,7 +596,7 @@ async function loadLAZFile(
       )
     };
     
-    console.log("✅ Extraction terminée:", {
+    console.log("Extraction terminée:", {
       points: totalPoints,
       hasRGBColors,
       memoryUsed: `${((positions.byteLength + colors.byteLength + intensities.byteLength + classifications.byteLength) / 1024 / 1024).toFixed(2)} MB`,
@@ -623,7 +623,7 @@ async function loadLAZFile(
     // Libérer le verrou de chargement
     loadingCache.set(cacheKey, false);
     
-    console.log(`✅ Fichier chargé et mis en cache: ${url}`);
+    console.log(`Fichier chargé et mis en cache: ${url}`);
     
     return result;
   } catch (error) {
@@ -631,7 +631,7 @@ async function loadLAZFile(
     loadingCache.set(cacheKey, false);
     loadedDataCache.delete(cacheKey);
     
-    console.error(`❌ Erreur lors du chargement du fichier ${url}:`, error);
+    console.error(`Erreur lors du chargement du fichier ${url}:`, error);
     throw error; // Propager l'erreur
   }
 }
@@ -657,7 +657,7 @@ async function loadCOPCMetadata(relativePath: string): Promise<{
   // Vérifier le cache (utiliser le chemin relatif comme clé pour la cohérence)
   const cached = copcMetadataCache.get(relativePath);
   if (cached) {
-    console.log(`✅ Métadonnées COPC déjà en cache pour ${relativePath}`);
+    console.log(`Métadonnées COPC déjà en cache pour ${relativePath}`);
     return {
       ...cached,
       availableClassifications: [],
@@ -665,7 +665,7 @@ async function loadCOPCMetadata(relativePath: string): Promise<{
     };
   }
 
-  console.log(`📥 Chargement des métadonnées COPC: ${relativePath} (${url})`);
+  console.log(`Chargement des métadonnées COPC: ${relativePath} (${url})`);
   
   // Initialiser laz-perf
   await initLazPerf();
@@ -742,7 +742,7 @@ async function loadCOPCMetadata(relativePath: string): Promise<{
     max: new THREE.Vector3(copc.header.max[0], copc.header.max[1], copc.header.max[2])
   };
   
-  console.log(`✅ ${nodes.size} nodes trouvés dans la hiérarchie`);
+  console.log(`${nodes.size} nodes trouvés dans la hiérarchie`);
   
   // Mettre en cache (utiliser le chemin relatif comme clé pour la cohérence)
   const metadata = { copc, getter, nodes, bounds };
@@ -784,7 +784,7 @@ async function loadSingleNode(
     return null;
   }
   
-  // ⚡ Délai réduit pour accélérer le chargement
+  // Délai réduit pour accélérer le chargement
   await new Promise(resolve => setTimeout(resolve, 100));
   
   // Charger les données du node avec gestion d'erreur complète
@@ -798,7 +798,7 @@ async function loadSingleNode(
       { lazPerf }
     );
   } catch (error) {
-    console.error(`❌ Erreur lors du chargement du node ${nodeKey} du fichier ${relativePath}:`, error);
+    console.error(`Erreur lors du chargement du node ${nodeKey} du fichier ${relativePath}:`, error);
     // Retourner null pour indiquer que le node n'a pas pu être chargé
     return null;
   }
@@ -840,7 +840,7 @@ async function loadSingleNode(
     
     return nodeData;
   } catch (error) {
-    console.error(`❌ Erreur lors de l'extraction des données du node ${nodeKey} du fichier ${relativePath}:`, error);
+    console.error(`Erreur lors de l'extraction des données du node ${nodeKey} du fichier ${relativePath}:`, error);
     // Retourner null pour indiquer que le node n'a pas pu être traité
     return null;
   }
@@ -926,19 +926,19 @@ function DynamicNodeLODManager({
   const lastNodesRef = useRef<string>(''); // Pour comparer les nodes à rendre
   const lastCameraPositionRef = useRef<THREE.Vector3>(new THREE.Vector3());
   
-  // ✅ CORRECTIF 1 : File d'attente de chargement avec limite de concurrence
+  // CORRECTIF 1 : File d'attente de chargement avec limite de concurrence
   const loadingQueueRef = useRef<Array<{ cacheKey: string; fileUrl: string; nodeKey: string; distance: number; retries: number }>>([]);
   const currentlyLoadingRef = useRef<number>(0);
-  const maxConcurrentLoads = 2; // ⚡ Augmenté à 2 pour plus de rapidité
-  const delayBetweenLoads = 150; // ⚡ Réduit à 150ms entre chargements
+  const maxConcurrentLoads = 2; // Augmenté à 2 pour plus de rapidité
+  const delayBetweenLoads = 150; // Réduit à 150ms entre chargements
   const maxRetries = 2; // 2 tentatives
   
-  // ✅ CORRECTIF 2 : Debouncing des mises à jour LOD
+  // CORRECTIF 2 : Debouncing des mises à jour LOD
   const lodUpdateTimerRef = useRef<number>(0);
   const pendingNodesRef = useRef<Array<{ fileUrl: string; nodeKey: string; level: number; distance: number }> | null>(null);
-  const LOD_UPDATE_DELAY = 100; // ⚡ Réduit à 100ms pour plus de réactivité
+  const LOD_UPDATE_DELAY = 100; // Réduit à 100ms pour plus de réactivité
   
-  // ✅ CORRECTIF 1 : Fonction pour traiter la file d'attente de chargement avec retry
+  // CORRECTIF 1 : Fonction pour traiter la file d'attente de chargement avec retry
   const processLoadQueue = useCallback(() => {
     if (loadingQueueRef.current.length > 0 && currentlyLoadingRef.current < maxConcurrentLoads) {
       const item = loadingQueueRef.current.shift()!;
@@ -946,7 +946,7 @@ function DynamicNodeLODManager({
       
       currentlyLoadingRef.current++;
       
-      // ⚡ Délai avant chaque chargement
+      // Délai avant chaque chargement
       setTimeout(() => {
         loadSingleNode(fileUrl, nodeKey).then(() => {
           currentlyLoadingRef.current--;
@@ -956,17 +956,17 @@ function DynamicNodeLODManager({
         }).catch((_err) => {
           currentlyLoadingRef.current--;
           
-          // ✅ Système de retry
+          // Système de retry
           if (retries < maxRetries) {
-            console.warn(`⚠️ Échec node ${nodeKey}, retry ${retries + 1}/${maxRetries}`);
+            console.warn(`Échec node ${nodeKey}, retry ${retries + 1}/${maxRetries}`);
             // Remettre en queue avec un retry incrémenté
             loadingQueueRef.current.push({ cacheKey, fileUrl, nodeKey, distance: item.distance, retries: retries + 1 });
           } else {
-            console.error(`❌ Échec définitif node ${nodeKey} après ${maxRetries} tentatives`);
+            console.error(`Échec définitif node ${nodeKey} après ${maxRetries} tentatives`);
             loadingNodesRef.current.delete(cacheKey);
           }
           
-          // ⚡ Délai plus long en cas d'erreur (500ms)
+          // Délai plus long en cas d'erreur (500ms)
           setTimeout(() => processLoadQueue(), 500);
         });
       }, delayBetweenLoads);
@@ -1089,7 +1089,7 @@ function DynamicNodeLODManager({
     let culledNodesCount = 0;
     let visibleNodesCount = 0;
     
-    // ✅ CORRECTIF 3 : Liste des nodes manquants à charger avec leur distance
+    // CORRECTIF 3 : Liste des nodes manquants à charger avec leur distance
     const missingNodes: Array<{ cacheKey: string; fileUrl: string; nodeKey: string; distance: number }> = [];
     
     // Mettre à jour la matrice de projection de la caméra avant de calculer le frustum
@@ -1127,7 +1127,7 @@ function DynamicNodeLODManager({
       for (const node of metadata.nodes.values()) {
         const { distance, nodeWidth } = getDistanceAndWidth(node.bounds);
         
-        // 🔍 FRUSTUM CULLING : Vérifier si le node est visible dans le frustum
+        // FRUSTUM CULLING : Vérifier si le node est visible dans le frustum
         const isVisible = isNodeInFrustum(node.bounds, frustum);
         
         if (!isVisible) {
@@ -1165,7 +1165,7 @@ function DynamicNodeLODManager({
           if (!debugInfo[node.level]) debugInfo[node.level] = 0;
           debugInfo[node.level]++;
           
-          // ✅ CORRECTIF 1 : Au lieu de charger immédiatement, ajouter à la liste des manquants
+          // CORRECTIF 1 : Au lieu de charger immédiatement, ajouter à la liste des manquants
           const cacheKey = `${fileUrl}_${node.key}`;
           if (!nodeDataCache.has(cacheKey) && !loadingNodesRef.current.has(cacheKey)) {
             missingNodes.push({ cacheKey, fileUrl, nodeKey: node.key, distance });
@@ -1174,10 +1174,10 @@ function DynamicNodeLODManager({
       }
     }
     
-    // ✅ CORRECTIF 3 : Trier les nodes manquants par distance (les plus proches en premier)
+    // CORRECTIF 3 : Trier les nodes manquants par distance (les plus proches en premier)
     missingNodes.sort((a, b) => a.distance - b.distance);
     
-    // ✅ CORRECTIF 1 : Ajouter les nodes manquants à la file d'attente
+    // CORRECTIF 1 : Ajouter les nodes manquants à la file d'attente
     for (const node of missingNodes) {
       if (!loadingNodesRef.current.has(node.cacheKey)) {
         loadingNodesRef.current.add(node.cacheKey);
@@ -1185,10 +1185,10 @@ function DynamicNodeLODManager({
       }
     }
     
-    // ✅ CORRECTIF 1 : Traiter la file d'attente
+    // CORRECTIF 1 : Traiter la file d'attente
     processLoadQueue();
     
-    // ✅ CORRECTIF 2 : Au lieu de mettre à jour immédiatement, utiliser un debounce
+    // CORRECTIF 2 : Au lieu de mettre à jour immédiatement, utiliser un debounce
     pendingNodesRef.current = nodesToRender;
     
     if (lodUpdateTimerRef.current) {
@@ -1210,16 +1210,16 @@ function DynamicNodeLODManager({
         onNodesUpdate(pendingNodesRef.current);
         
         // Log uniquement quand il y a un changement
-        console.log(`🔄 LOD mise à jour: ${pendingNodesRef.current.length} nodes à rendre (${missingNodes.length} en cours de chargement)`);
+        console.log(`LOD mise à jour: ${pendingNodesRef.current.length} nodes à rendre (${missingNodes.length} en cours de chargement)`);
         console.log(`   Répartition par niveau:`, debugInfo);
-        console.log(`   🔍 Frustum culling: ${visibleNodesCount} visibles, ${culledNodesCount} cullés (LOD 1)`);
-        console.log(`   📦 File d'attente: ${loadingQueueRef.current.length} en attente, ${currentlyLoadingRef.current}/${maxConcurrentLoads} en cours`);
+        console.log(`   Frustum culling: ${visibleNodesCount} visibles, ${culledNodesCount} cullés (LOD 1)`);
+        console.log(`   File d'attente: ${loadingQueueRef.current.length} en attente, ${currentlyLoadingRef.current}/${maxConcurrentLoads} en cours`);
       }
     }, LOD_UPDATE_DELAY);
     
     // Afficher des infos de debug toutes les 5 secondes (150 frames à 30fps)
     if (frameCountRef.current % 150 === 0) {
-      console.log(`🎯 LOD dynamique: ${nodesToRender.length} nodes actifs`);
+      console.log(`LOD dynamique: ${nodesToRender.length} nodes actifs`);
       console.log(`   Position caméra:`, camera.position.toArray().map(v => v.toFixed(1)));
     }
   });
@@ -1242,16 +1242,16 @@ function EDLEffect({
   useEffect(() => {
     // CORRECTION : Créer explicitement une texture de profondeur
     const depthTexture = new THREE.DepthTexture(size.width, size.height);
-    depthTexture.type = THREE.FloatType;  // ✅ FloatType pour meilleure précision avec logarithmic depth
+    depthTexture.type = THREE.FloatType;  // FloatType pour meilleure précision avec logarithmic depth
     depthTexture.format = THREE.DepthFormat;
 
     // Créer un render target avec la texture de profondeur
     const renderTarget = new THREE.WebGLRenderTarget(size.width, size.height, {
-      minFilter: THREE.NearestFilter,  // ✅ NearestFilter pour éviter l'interpolation de profondeur
+      minFilter: THREE.NearestFilter,  // NearestFilter pour éviter l'interpolation de profondeur
       magFilter: THREE.NearestFilter,
       format: THREE.RGBAFormat,
-      type: THREE.UnsignedByteType,  // ✅ Pour les couleurs
-      depthTexture: depthTexture,  // ✅ Assigner la texture de profondeur
+      type: THREE.UnsignedByteType,  // Pour les couleurs
+      depthTexture: depthTexture,  // Assigner la texture de profondeur
       depthBuffer: true,
       stencilBuffer: false
     });
@@ -1267,7 +1267,7 @@ function EDLEffect({
     // Créer et ajouter le ShaderPass EDL
     const edlPass = new ShaderPass(EDLShader);
     edlPass.uniforms.resolution.value.set(size.width, size.height);
-    edlPass.uniforms.tDepth.value = depthTexture;  // ✅ Utiliser la texture créée
+    edlPass.uniforms.tDepth.value = depthTexture;  // Utiliser la texture créée
     edlPass.uniforms.edlStrength.value = edlStrength;
     edlPass.uniforms.radius.value = edlRadius;
     composer.addPass(edlPass);
@@ -1667,7 +1667,7 @@ function PointCloudRenderer({
     
     const geo = geometryRef.current;
     
-    // ✅ CORRECTIF 4 : Réutiliser les buffers si possible au lieu de les recréer
+    // CORRECTIF 4 : Réutiliser les buffers si possible au lieu de les recréer
     const posAttr = geo.getAttribute('position');
     if (posAttr && posAttr.array.length === filteredPositions.length) {
       // Réutiliser le buffer existant
@@ -1689,7 +1689,7 @@ function PointCloudRenderer({
       geo.setAttribute('color', new THREE.BufferAttribute(filteredColors, 3));
     }
     
-    // ✅ CORRECTIF 4 : Calculer les bounds seulement si nécessaire (une fois par LOD change)
+    // CORRECTIF 4 : Calculer les bounds seulement si nécessaire (une fois par LOD change)
     if (!geo.boundingBox || !geo.boundingSphere) {
       geo.computeBoundingBox();
       geo.computeBoundingSphere();
@@ -1823,14 +1823,14 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
     }
   }, [currentPointSize]);
   
-  // 🚀 Nouveau système : Chargement des métadonnées puis du niveau 1 uniquement
+  // Nouveau système : Chargement des métadonnées puis du niveau 1 uniquement
   useEffect(() => {
     let isMounted = true;
     
     async function loadInitialData() {
       try {
         setError(null);
-        console.log(`🚀 Chargement des métadonnées de ${lazFilePaths.length} fichier(s)`);
+        console.log(`Chargement des métadonnées de ${lazFilePaths.length} fichier(s)`);
         
         // Étape 1 : Charger les métadonnées de tous les fichiers
         // Les chemins sont déjà des chemins relatifs, ils seront résolus dans loadCOPCMetadata
@@ -1842,7 +1842,7 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
             const metadata = await loadCOPCMetadata(filePath);
             metadataResults.push({ filePath, metadata });
           } catch (error) {
-            console.error(`❌ Impossible de charger les métadonnées pour ${filePath}:`, error);
+            console.error(`Impossible de charger les métadonnées pour ${filePath}:`, error);
             metadataResults.push({ filePath, metadata: null });
           }
         }
@@ -1857,7 +1857,7 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
         }
         
         if (allMetadata.length < lazFilePaths.length) {
-          console.warn(`⚠️ ${lazFilePaths.length - allMetadata.length} fichier(s) n'ont pas pu être chargé(s) sur ${lazFilePaths.length}`);
+          console.warn(`${lazFilePaths.length - allMetadata.length} fichier(s) n'ont pas pu être chargé(s) sur ${lazFilePaths.length}`);
         }
         
         if (!isMounted) return;
@@ -1871,10 +1871,10 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
           globalMax.max(metadata.bounds.max);
         }
         
-        console.log(`✅ Métadonnées chargées. Bounds globaux:`, { min: globalMin, max: globalMax });
+        console.log(`Métadonnées chargées. Bounds globaux:`, { min: globalMin, max: globalMax });
         
         // Étape 2 : Charger uniquement le niveau 1 de tous les fichiers qui ont réussi
-        console.log(`📥 Chargement du niveau 1 de ${successfulFilePaths.length} fichier(s)...`);
+        console.log(`Chargement du niveau 1 de ${successfulFilePaths.length} fichier(s)...`);
         
         // Charger les nodes de manière séquentielle par fichier pour éviter de surcharger le serveur
         // et permettre une meilleure gestion des erreurs
@@ -1894,7 +1894,7 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
               try {
                 return await loadSingleNode(filePath, node.key);
               } catch (error) {
-                console.error(`❌ Erreur lors du chargement du node ${node.key} du fichier ${filePath}:`, error);
+                console.error(`Erreur lors du chargement du node ${node.key} du fichier ${filePath}:`, error);
                 return null;
               }
             });
@@ -1910,7 +1910,7 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
         
         if (!isMounted) return;
         
-        console.log(`✅ Niveau 1 chargé pour tous les fichiers`);
+        console.log(`Niveau 1 chargé pour tous les fichiers`);
         
         // Initialiser l'affichage avec le niveau 1
         // Ne inclure que les nodes qui ont été chargés avec succès
@@ -1936,9 +1936,9 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
         }
         
         if (initialNodesToRender.length === 0) {
-          console.warn(`⚠️ Aucun node de niveau 1 n'a pu être chargé. L'affichage sera vide.`);
+          console.warn(`Aucun node de niveau 1 n'a pu être chargé. L'affichage sera vide.`);
         } else {
-          console.log(`✅ ${initialNodesToRender.length} node(s) de niveau 1 prêt(s) pour l'affichage`);
+          console.log(`${initialNodesToRender.length} node(s) de niveau 1 prêt(s) pour l'affichage`);
         }
         
         setNodesToRender(initialNodesToRender);
@@ -1957,7 +1957,7 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
         setVisibleClassifications(new Set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]));
         setMetadataLoaded(true);
         
-        console.log(`🎨 Affichage initial prêt avec ${initialNodesToRender.length} nodes de niveau 1`);
+        console.log(`Affichage initial prêt avec ${initialNodesToRender.length} nodes de niveau 1`);
         
       } catch (err) {
         if (isMounted) {
@@ -1974,7 +1974,7 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
     };
   }, [lazFilePaths]);
   
-  // 🎨 Nouveau : Gérer l'affichage dynamique des nodes sans fusion
+  // Nouveau : Gérer l'affichage dynamique des nodes sans fusion
   // Mémoïser uniquement la liste des clés de nodes à afficher
   const nodesToRenderKeys = useMemo(() => {
     if (nodesToRender.length === 0 || !metadataLoaded) return new Set<string>();
@@ -2238,7 +2238,7 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
               L'Eye-Dome Lighting (EDL) est utilisé pour la perception de profondeur.
               Cette lumière "Soleil" éclaire uniquement les éléments auxiliaires (axes, grille, etc.). */}
           
-          {/* ☀️ Lumière directionnelle "Soleil" - éclairage principal de la scène */}
+          {/* Lumière directionnelle "Soleil" - éclairage principal de la scène */}
           <directionalLight 
             position={[100, 100, 100]}  // Position du soleil (diagonal haut)
             intensity={1.2}             // Intensité lumineuse
