@@ -859,61 +859,61 @@ interface CameraControlsType {
 }
 
 // Composant pour configurer la caméra (utilisé dans le JSX ci-dessous)
-function CameraSetup({ bounds }: { bounds: { min: THREE.Vector3; max: THREE.Vector3 } }) {
-  const { camera, controls } = useThree();
-  const initializedRef = useRef(false);
+// function CameraSetup({ bounds }: { bounds: { min: THREE.Vector3; max: THREE.Vector3 } }) {
+//   const { camera, controls } = useThree();
+//   const initializedRef = useRef(false);
   
-  useEffect(() => {
-    // N'exécuter qu'une seule fois pour éviter les conflits avec CameraControls
-    if (initializedRef.current) return;
-    initializedRef.current = true;
+//   useEffect(() => {
+//     // N'exécuter qu'une seule fois pour éviter les conflits avec CameraControls
+//     if (initializedRef.current) return;
+//     initializedRef.current = true;
     
-    // Le centre est à (0, 0, 0) car les positions sont déjà centrées
-    const center = new THREE.Vector3(0, 0, 0);
+//     // Le centre est à (0, 0, 0) car les positions sont déjà centrées
+//     const center = new THREE.Vector3(0, 0, 0);
     
-    // Calculer la taille du nuage de points
-    const size = new THREE.Vector3(
-      bounds.max.x - bounds.min.x,
-      bounds.max.y - bounds.min.y,
-      bounds.max.z - bounds.min.z
-    );
+//     // Calculer la taille du nuage de points
+//     const size = new THREE.Vector3(
+//       bounds.max.x - bounds.min.x,
+//       bounds.max.y - bounds.min.y,
+//       bounds.max.z - bounds.min.z
+//     );
     
-    // Calculer la distance de la caméra pour voir l'ensemble du nuage
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const fitOffset = 1.0; // Augmenté pour avoir une meilleure vue d'ensemble
-    const distance = maxDim * fitOffset;
+//     // Calculer la distance de la caméra pour voir l'ensemble du nuage
+//     const maxDim = Math.max(size.x, size.y, size.z);
+//     const fitOffset = 1.0; // Augmenté pour avoir une meilleure vue d'ensemble
+//     const distance = maxDim * fitOffset;
     
-    // Positionner la caméra
-    camera.position.set(
-      0,
-      distance * -0.5,
-      distance
-    );
+//     // Positionner la caméra
+//     camera.position.set(
+//       0,
+//       distance * -0.5,
+//       distance
+//     );
     
-    camera.lookAt(center);
+//     camera.lookAt(center);
     
-    // Ajuster les plans de clipping
-    camera.near = distance * 0.001;
-    camera.far = distance * 100;
-    camera.updateProjectionMatrix();
+//     // Ajuster les plans de clipping
+//     camera.near = distance * 0.001;
+//     camera.far = distance * 100;
+//     camera.updateProjectionMatrix();
     
-    // Si les contrôles sont disponibles, définir leur cible
-    if (controls && 'target' in controls && 'update' in controls) {
-      (controls as unknown as CameraControlsType).target.copy(center);
-      (controls as unknown as CameraControlsType).update();
-    }
+//     // Si les contrôles sont disponibles, définir leur cible
+//     if (controls && 'target' in controls && 'update' in controls) {
+//       (controls as unknown as CameraControlsType).target.copy(center);
+//       (controls as unknown as CameraControlsType).update();
+//     }
     
-    console.log("Caméra configurée:", {
-      position: camera.position.toArray(),
-      target: center.toArray(),
-      distance,
-      near: camera.near,
-      far: camera.far
-    });
-  }, [bounds, camera, controls]);
+//     console.log("Caméra configurée:", {
+//       position: camera.position.toArray(),
+//       target: center.toArray(),
+//       distance,
+//       near: camera.near,
+//       far: camera.far
+//     });
+//   }, [bounds, camera, controls]);
   
-  return null;
-}
+//   return null;
+// }
 
 // Composant pour gérer le LOD dynamique par node basé sur la distance de la caméra
 function DynamicNodeLODManager({
