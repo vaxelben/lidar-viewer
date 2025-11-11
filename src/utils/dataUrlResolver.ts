@@ -57,17 +57,19 @@ function extractFileName(path: string): string {
 /**
  * Ajoute un proxy CORS si nécessaire pour les URLs GitHub Releases
  * GitHub Releases ne supporte pas CORS, donc on utilise un proxy
+ * Note: Cloudflare R2, AWS S3, Google Cloud Storage supportent CORS nativement
  * @param url URL à vérifier et potentiellement proxifier
  * @returns URL avec proxy CORS si nécessaire
  */
 function addCorsProxyIfNeeded(url: string): string {
-  // Détecter si c'est une URL GitHub Releases
+  // Détecter si c'est une URL GitHub Releases (qui ne supporte pas CORS)
   if (url.includes('github.com') && url.includes('/releases/download/')) {
-    // Utiliser un proxy CORS qui supporte les requêtes Range
-    // allorigins.win supporte les requêtes Range pour les fichiers binaires
-    const encodedUrl = encodeURIComponent(url);
-    return `https://api.allorigins.win/raw?url=${encodedUrl}`;
+    // Utiliser corsproxy.io qui supporte les requêtes Range pour les fichiers binaires
+    // Note: corsproxy.io transmet les headers Range correctement
+    return `https://corsproxy.io/?${encodeURIComponent(url)}`;
   }
+  
+  // Pour Cloudflare R2, AWS S3, GCS, etc. : pas de proxy nécessaire (CORS natif)
   return url;
 }
 
@@ -99,18 +101,22 @@ export async function resolveDataUrl(relativePath: string): Promise<string> {
   
   // Pour GitHub Releases, utiliser uniquement le nom du fichier (pas le chemin)
   // car les fichiers sont uploadés à la racine de la release
-  // Détecter GitHub Releases de manière plus robuste avec une regex
+  // Pour R2/S3/GCS, on peut aussi uploader à la racine OU conserver la structure
   const githubReleasesPattern = /github\.com\/.*\/releases\/download\//i;
   const isGitHubReleases = githubReleasesPattern.test(baseUrl);
   
-  console.log(`🔍 Résolution URL: baseUrl="${baseUrl}", isGitHubReleases=${isGitHubReleases}, relativePath="${relativePath}"`);
+  // Détecter Cloudflare R2 (optionnel - pour utiliser uniquement le nom de fichier)
+  const isCloudflareR2 = baseUrl.includes('.r2.dev') || baseUrl.includes('r2.cloudflarestorage.com');
+  
+  console.log(`🔍 Résolution URL: baseUrl="${baseUrl}", isGitHubReleases=${isGitHubReleases}, isR2=${isCloudflareR2}, relativePath="${relativePath}"`);
   
   let filePath: string;
-  if (isGitHubReleases) {
+  if (isGitHubReleases || isCloudflareR2) {
+    // Pour GitHub Releases et R2 : utiliser uniquement le nom du fichier
     filePath = extractFileName(relativePath);
-    console.log(`✅ GitHub Releases: ${relativePath} -> ${filePath}`);
+    console.log(`✅ ${isGitHubReleases ? 'GitHub Releases' : 'Cloudflare R2'}: ${relativePath} -> ${filePath}`);
   } else {
-    // Pour les autres sources (S3, etc.), garder le chemin complet
+    // Pour les autres sources (S3, GCS avec structure de dossiers), garder le chemin complet
     const cleanPath = relativePath.startsWith('/') ? relativePath.slice(1) : relativePath;
     filePath = cleanPath;
   }
@@ -146,17 +152,17 @@ export async function resolveDataUrls(relativePaths: string[]): Promise<string[]
     ? config.dataBaseUrl.slice(0, -1) 
     : config.dataBaseUrl;
 
-  // Pour GitHub Releases, utiliser uniquement le nom du fichier (pas le chemin)
-  // Détecter GitHub Releases de manière plus robuste avec une regex
+  // Pour GitHub Releases et Cloudflare R2, utiliser uniquement le nom du fichier
   const githubReleasesPattern = /github\.com\/.*\/releases\/download\//i;
   const isGitHubReleases = githubReleasesPattern.test(baseUrl);
+  const isCloudflareR2 = baseUrl.includes('.r2.dev') || baseUrl.includes('r2.cloudflarestorage.com');
 
   return relativePaths.map(path => {
     let filePath: string;
-    if (isGitHubReleases) {
+    if (isGitHubReleases || isCloudflareR2) {
       filePath = extractFileName(path);
     } else {
-      // Pour les autres sources (S3, etc.), garder le chemin complet
+      // Pour les autres sources (S3, GCS avec structure de dossiers), garder le chemin complet
       const cleanPath = path.startsWith('/') ? path.slice(1) : path;
       filePath = cleanPath;
     }

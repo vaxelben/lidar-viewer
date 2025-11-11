@@ -12,9 +12,13 @@ dist
 dist-ssr
 *.local
 
-public/data/
+CLOUDFARE_R2_SETUP.md
+R2_SECURITY.md
+upload-to-r2.ps1
 
-potree_converter/
+public/data
+
+potree_converter
 
 # Editor directories and files
 .vscode/*
@@ -26,4 +30,3 @@ potree_converter/
 *.njsproj
 *.sln
 *.sw?
-node_modules/
