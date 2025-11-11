@@ -12,7 +12,9 @@ dist
 dist-ssr
 *.local
 
-public/data/old/
+public/data/
+
+potree_converter/
 
 # Editor directories and files
 .vscode/*
@@ -25,7 +27,3 @@ public/data/old/
 *.sln
 *.sw?
 node_modules/
-public/data/boulay/
-public/data/strasbourg/
-public/data/metz/
-potree_converter/
