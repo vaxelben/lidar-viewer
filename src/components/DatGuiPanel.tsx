@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as dat from 'dat.gui';
 
@@ -84,8 +84,6 @@ export function DatGuiPanel({
   closed
 }: DatGuiPanelProps) {
   const guiRef = useRef<dat.GUI | null>(null);
-  const [_fps, setFps] = useState(60);
-  const [_frameTime, setFrameTime] = useState(16.7);
 
   // Objet pour dat.gui (doit être un objet avec des propriétés mutables)
   const controlsRef = useRef({
@@ -111,9 +109,6 @@ export function DatGuiPanel({
   });
 
   const handleStatsUpdate = (newFps: number, newFrameTime: number) => {
-    setFps(newFps);
-    setFrameTime(newFrameTime);
-    
     // Mettre à jour les valeurs dans l'objet controls
     controlsRef.current.FPS = newFps;
     controlsRef.current['Frame Time (ms)'] = Math.round(newFrameTime * 100) / 100;
@@ -144,8 +139,8 @@ export function DatGuiPanel({
     
     // Positionner le GUI en haut à droite
     gui.domElement.style.position = 'absolute';
-    gui.domElement.style.top = '10px';
-    gui.domElement.style.left = '10px';
+    gui.domElement.style.top = '0px';
+    gui.domElement.style.left = '0px';
     gui.domElement.style.zIndex = '1000';
     
     guiRef.current = gui;
@@ -171,7 +166,8 @@ export function DatGuiPanel({
       .listen()
       .name('Mémoire (MB)');
     
-    perfFolder.open(); // Ouvrir par défaut
+    // Fermer le GUI par défaut
+    gui.close();
 
     // Nettoyer au démontage
     return () => {
