@@ -148,31 +148,35 @@ function createBrowserGetter(url: string): Getter {
     
     // Vérifier que ce n'est pas du HTML (page d'erreur)
     // Les fichiers COPC commencent par "LASF" (0x4C 0x41 0x53 0x46)
-    // Le HTML commence généralement par "<!do" ou "<htm"
+    // Le HTML commence généralement par "<!DOCTYPE" ou "<html"
     if (data.length > 0) {
-      const firstBytes = Array.from(data.slice(0, 4))
-        .map(b => String.fromCharCode(b))
-        .join('');
-      
-      // Détecter HTML
-      if (firstBytes.toLowerCase().startsWith('<!do') || 
-          firstBytes.toLowerCase().startsWith('<htm') ||
-          firstBytes[0] === '<') {
-        const textDecoder = new TextDecoder();
-        const preview = textDecoder.decode(data.slice(0, 500));
-        throw new Error(
-          `Le serveur a renvoyé du HTML au lieu du fichier binaire.\n` +
-          `URL: ${url}\n` +
-          `Range: bytes=${begin}-${end - 1}\n` +
-          `Statut HTTP: ${response.status}\n` +
-          `Aperçu de la réponse: ${preview}`
-        );
-      }
-      
-      // Pour les premiers bytes du fichier, vérifier la signature COPC
+      // Pour les premiers bytes du fichier (begin === 0), vérifier la signature COPC
       if (begin === 0 && data.length >= 4) {
         const signature = String.fromCharCode(data[0], data[1], data[2], data[3]);
         if (signature !== 'LASF') {
+          // Vérifier si c'est du HTML (détection plus stricte)
+          const firstBytes = Array.from(data.slice(0, Math.min(15, data.length)))
+            .map(b => String.fromCharCode(b))
+            .join('');
+          
+          // Détecter HTML uniquement avec des patterns complets et stricts
+          const lowerFirstBytes = firstBytes.toLowerCase();
+          const isHTML = lowerFirstBytes.startsWith('<!doctype') || 
+                         lowerFirstBytes.startsWith('<html') ||
+                         lowerFirstBytes.startsWith('<!DOCTYPE');
+          
+          if (isHTML) {
+            const textDecoder = new TextDecoder();
+            const preview = textDecoder.decode(data.slice(0, 500));
+            throw new Error(
+              `Le serveur a renvoyé du HTML au lieu du fichier binaire.\n` +
+              `URL: ${url}\n` +
+              `Range: bytes=${begin}-${end - 1}\n` +
+              `Statut HTTP: ${response.status}\n` +
+              `Aperçu de la réponse: ${preview}`
+            );
+          }
+          
           throw new Error(
             `Signature de fichier invalide: "${signature}" (attendu: "LASF")\n` +
             `URL: ${url}\n` +
@@ -180,6 +184,8 @@ function createBrowserGetter(url: string): Getter {
           );
         }
       }
+      // Pour les chunks de données (begin > 0), on ne vérifie pas la signature
+      // car ce sont des données compressées LAZ qui peuvent commencer par n'importe quel byte
     }
     
     return data;
@@ -852,8 +858,7 @@ interface CameraControlsType {
   update: () => void;
 }
 
-// Composant pour configurer la caméra
-// @ts-expect-error - TypeScript ne détecte pas l'utilisation dans le JSX
+// Composant pour configurer la caméra (utilisé dans le JSX ci-dessous)
 function CameraSetup({ bounds }: { bounds: { min: THREE.Vector3; max: THREE.Vector3 } }) {
   const { camera, controls } = useThree();
   const initializedRef = useRef(false);
@@ -953,7 +958,7 @@ function DynamicNodeLODManager({
           loadingNodesRef.current.delete(cacheKey);
           // Continuer après un délai
           setTimeout(() => processLoadQueue(), delayBetweenLoads);
-        }).catch((_err) => {
+        }).catch(() => {
           currentlyLoadingRef.current--;
           
           // ✅ Système de retry
