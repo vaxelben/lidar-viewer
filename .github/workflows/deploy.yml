@@ -40,13 +40,13 @@ jobs:
           # Pour un dépôt user/organization à la racine : /
           BASE_PATH: '/lidar-viewer/'
 
-      - name: Configure data URL for Cloudflare R2
+      - name: Configure data URL for Cloudflare R2 Worker
         run: |
-          # Configurer l'URL de base pour pointer vers Cloudflare R2
+          # Configurer l'URL de base pour pointer vers le Cloudflare Worker (proxy R2)
           cat > dist/data-config.json << 'EOF'
           {
-            "dataBaseUrl": "https://pub-f014095bd3804df3bb311a5b0ea153a2.r2.dev",
-            "description": "Configuration pour les fichiers de données LiDAR hébergés sur Cloudflare R2"
+            "dataBaseUrl": "https://r2-proxy-worker.datawrap.workers.dev",
+            "description": "Configuration pour les fichiers de données LiDAR hébergés sur Cloudflare R2 via Worker"
           }
           EOF
           
