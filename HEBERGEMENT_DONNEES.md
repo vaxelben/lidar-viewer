@@ -41,6 +41,7 @@ GitHub Pages ne supporte pas Git LFS nativement. Les fichiers `.copc.laz` dans L
    - Le fichier `.github/workflows/deploy.yml` a été mis à jour
    - Il pointe automatiquement vers : `https://github.com/vaxelben/lidar-viewer/releases/download/v1.0.0-data`
    - L'application chargera les fichiers depuis GitHub Releases
+   - ⚡ **Proxy CORS automatique** : Le code ajoute automatiquement un proxy CORS pour les URLs GitHub Releases (car GitHub Releases ne supporte pas CORS nativement)
 
 5. **Test**
    - Committez et pushez les changements
@@ -204,4 +205,7 @@ R : Utilisez Cloudflare R2 (10 GB gratuit) ou AWS S3/GCS.
 
 **Q : Puis-je utiliser jsDeliv CDN ?**  
 R : Non, jsDeliv ne supporte pas les requêtes de plage pour les gros fichiers.
+
+**Q : Pourquoi j'ai une erreur CORS avec GitHub Releases ?**  
+R : GitHub Releases ne supporte pas CORS nativement. Le code ajoute automatiquement un proxy CORS (`allorigins.win`) pour résoudre ce problème. Si vous rencontrez toujours des problèmes, vérifiez que la release existe et que les fichiers sont bien uploadés.
 

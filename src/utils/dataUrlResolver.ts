@@ -41,9 +41,26 @@ async function loadDataConfig(): Promise<DataConfig> {
 }
 
 /**
+ * Ajoute un proxy CORS si nécessaire pour les URLs GitHub Releases
+ * GitHub Releases ne supporte pas CORS, donc on utilise un proxy
+ * @param url URL à vérifier et potentiellement proxifier
+ * @returns URL avec proxy CORS si nécessaire
+ */
+function addCorsProxyIfNeeded(url: string): string {
+  // Détecter si c'est une URL GitHub Releases
+  if (url.includes('github.com') && url.includes('/releases/download/')) {
+    // Utiliser un proxy CORS qui supporte les requêtes Range
+    // allorigins.win supporte les requêtes Range pour les fichiers binaires
+    const encodedUrl = encodeURIComponent(url);
+    return `https://api.allorigins.win/raw?url=${encodedUrl}`;
+  }
+  return url;
+}
+
+/**
  * Résout l'URL complète d'un fichier de données
  * @param relativePath Chemin relatif du fichier (ex: '/data/metz/file.copc.laz')
- * @returns URL complète du fichier
+ * @returns URL complète du fichier (avec proxy CORS si nécessaire)
  */
 export async function resolveDataUrl(relativePath: string): Promise<string> {
   const config = await loadDataConfig();
@@ -52,10 +69,13 @@ export async function resolveDataUrl(relativePath: string): Promise<string> {
   if (!config.dataBaseUrl || config.dataBaseUrl.trim() === '') {
     const baseUrl = import.meta.env.BASE_URL || '/';
     // Si le chemin commence par /, on le garde, sinon on l'ajoute au base path
+    let url: string;
     if (relativePath.startsWith('/')) {
-      return `${baseUrl}${relativePath.slice(1)}`.replace(/\/+/g, '/');
+      url = `${baseUrl}${relativePath.slice(1)}`.replace(/\/+/g, '/');
+    } else {
+      url = `${baseUrl}${relativePath}`.replace(/\/+/g, '/');
     }
-    return `${baseUrl}${relativePath}`.replace(/\/+/g, '/');
+    return addCorsProxyIfNeeded(url);
   }
 
   // Nettoyer le chemin relatif (enlever le slash initial si présent)
@@ -66,13 +86,14 @@ export async function resolveDataUrl(relativePath: string): Promise<string> {
     ? config.dataBaseUrl.slice(0, -1) 
     : config.dataBaseUrl;
   
-  return `${baseUrl}/${cleanPath}`;
+  const url = `${baseUrl}/${cleanPath}`;
+  return addCorsProxyIfNeeded(url);
 }
 
 /**
  * Résout plusieurs URLs en une seule fois
  * @param relativePaths Tableau de chemins relatifs
- * @returns Tableau d'URLs complètes
+ * @returns Tableau d'URLs complètes (avec proxy CORS si nécessaire)
  */
 export async function resolveDataUrls(relativePaths: string[]): Promise<string[]> {
   const config = await loadDataConfig();
@@ -80,10 +101,13 @@ export async function resolveDataUrls(relativePaths: string[]): Promise<string[]
   if (!config.dataBaseUrl || config.dataBaseUrl.trim() === '') {
     const baseUrl = import.meta.env.BASE_URL || '/';
     return relativePaths.map(path => {
+      let url: string;
       if (path.startsWith('/')) {
-        return `${baseUrl}${path.slice(1)}`.replace(/\/+/g, '/');
+        url = `${baseUrl}${path.slice(1)}`.replace(/\/+/g, '/');
+      } else {
+        url = `${baseUrl}${path}`.replace(/\/+/g, '/');
       }
-      return `${baseUrl}${path}`.replace(/\/+/g, '/');
+      return addCorsProxyIfNeeded(url);
     });
   }
 
@@ -93,7 +117,8 @@ export async function resolveDataUrls(relativePaths: string[]): Promise<string[]
 
   return relativePaths.map(path => {
     const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-    return `${baseUrl}/${cleanPath}`;
+    const url = `${baseUrl}/${cleanPath}`;
+    return addCorsProxyIfNeeded(url);
   });
 }
 
