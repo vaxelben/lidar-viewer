@@ -41,6 +41,20 @@ async function loadDataConfig(): Promise<DataConfig> {
 }
 
 /**
+ * Extrait le nom du fichier depuis un chemin (pour GitHub Releases)
+ * GitHub Releases stocke les fichiers à la racine, pas dans une structure de dossiers
+ * @param path Chemin du fichier (ex: '/data/metz/file.copc.laz' ou 'data/metz/file.copc.laz')
+ * @returns Nom du fichier uniquement (ex: 'file.copc.laz')
+ */
+function extractFileName(path: string): string {
+  // Enlever le slash initial si présent
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+  // Extraire le nom du fichier (dernière partie après le dernier slash)
+  const parts = cleanPath.split('/');
+  return parts[parts.length - 1];
+}
+
+/**
  * Ajoute un proxy CORS si nécessaire pour les URLs GitHub Releases
  * GitHub Releases ne supporte pas CORS, donc on utilise un proxy
  * @param url URL à vérifier et potentiellement proxifier
@@ -78,15 +92,23 @@ export async function resolveDataUrl(relativePath: string): Promise<string> {
     return addCorsProxyIfNeeded(url);
   }
 
-  // Nettoyer le chemin relatif (enlever le slash initial si présent)
-  const cleanPath = relativePath.startsWith('/') ? relativePath.slice(1) : relativePath;
-  
   // Construire l'URL complète
   const baseUrl = config.dataBaseUrl.endsWith('/') 
     ? config.dataBaseUrl.slice(0, -1) 
     : config.dataBaseUrl;
   
-  const url = `${baseUrl}/${cleanPath}`;
+  // Pour GitHub Releases, utiliser uniquement le nom du fichier (pas le chemin)
+  // car les fichiers sont uploadés à la racine de la release
+  let filePath: string;
+  if (baseUrl.includes('github.com') && baseUrl.includes('/releases/download/')) {
+    filePath = extractFileName(relativePath);
+  } else {
+    // Pour les autres sources (S3, etc.), garder le chemin complet
+    const cleanPath = relativePath.startsWith('/') ? relativePath.slice(1) : relativePath;
+    filePath = cleanPath;
+  }
+  
+  const url = `${baseUrl}/${filePath}`;
   return addCorsProxyIfNeeded(url);
 }
 
@@ -115,9 +137,19 @@ export async function resolveDataUrls(relativePaths: string[]): Promise<string[]
     ? config.dataBaseUrl.slice(0, -1) 
     : config.dataBaseUrl;
 
+  // Pour GitHub Releases, utiliser uniquement le nom du fichier (pas le chemin)
+  const isGitHubReleases = baseUrl.includes('github.com') && baseUrl.includes('/releases/download/');
+
   return relativePaths.map(path => {
-    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-    const url = `${baseUrl}/${cleanPath}`;
+    let filePath: string;
+    if (isGitHubReleases) {
+      filePath = extractFileName(path);
+    } else {
+      // Pour les autres sources (S3, etc.), garder le chemin complet
+      const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+      filePath = cleanPath;
+    }
+    const url = `${baseUrl}/${filePath}`;
     return addCorsProxyIfNeeded(url);
   });
 }
