@@ -130,12 +130,59 @@ function createBrowserGetter(url: string): Getter {
       }
     });
     
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    // Vérifier le statut HTTP
+    // 206 = Partial Content (normal pour les requêtes Range)
+    // 200 = OK (si le serveur ne supporte pas Range, il renvoie tout le fichier)
+    if (!response.ok && response.status !== 206 && response.status !== 200) {
+      const errorText = await response.text().catch(() => '');
+      throw new Error(
+        `HTTP error! status: ${response.status} - ${response.statusText}\n` +
+        `URL: ${url}\n` +
+        `Range: bytes=${begin}-${end - 1}\n` +
+        (errorText ? `Réponse: ${errorText.substring(0, 200)}` : '')
+      );
     }
     
     const arrayBuffer = await response.arrayBuffer();
-    return new Uint8Array(arrayBuffer);
+    const data = new Uint8Array(arrayBuffer);
+    
+    // Vérifier que ce n'est pas du HTML (page d'erreur)
+    // Les fichiers COPC commencent par "LASF" (0x4C 0x41 0x53 0x46)
+    // Le HTML commence généralement par "<!do" ou "<htm"
+    if (data.length > 0) {
+      const firstBytes = Array.from(data.slice(0, 4))
+        .map(b => String.fromCharCode(b))
+        .join('');
+      
+      // Détecter HTML
+      if (firstBytes.toLowerCase().startsWith('<!do') || 
+          firstBytes.toLowerCase().startsWith('<htm') ||
+          firstBytes[0] === '<') {
+        const textDecoder = new TextDecoder();
+        const preview = textDecoder.decode(data.slice(0, 500));
+        throw new Error(
+          `Le serveur a renvoyé du HTML au lieu du fichier binaire.\n` +
+          `URL: ${url}\n` +
+          `Range: bytes=${begin}-${end - 1}\n` +
+          `Statut HTTP: ${response.status}\n` +
+          `Aperçu de la réponse: ${preview}`
+        );
+      }
+      
+      // Pour les premiers bytes du fichier, vérifier la signature COPC
+      if (begin === 0 && data.length >= 4) {
+        const signature = String.fromCharCode(data[0], data[1], data[2], data[3]);
+        if (signature !== 'LASF') {
+          throw new Error(
+            `Signature de fichier invalide: "${signature}" (attendu: "LASF")\n` +
+            `URL: ${url}\n` +
+            `Le fichier ne semble pas être un fichier LAZ/COPC valide.`
+          );
+        }
+      }
+    }
+    
+    return data;
   };
 }
 
@@ -724,33 +771,40 @@ async function loadSingleNode(
     return cached;
   }
   
+  // Récupérer les métadonnées (utiliser le chemin relatif comme clé)
+  const metadata = copcMetadataCache.get(relativePath);
+  if (!metadata) {
+    console.error(`Métadonnées non trouvées pour ${relativePath}`);
+    return null;
+  }
+  
+  const nodeMetadata = metadata.nodes.get(nodeKey);
+  if (!nodeMetadata) {
+    console.error(`Node ${nodeKey} non trouvé dans les métadonnées`);
+    return null;
+  }
+  
+  // ⚡ Délai réduit pour accélérer le chargement
+  await new Promise(resolve => setTimeout(resolve, 100));
+  
+  // Charger les données du node avec gestion d'erreur complète
+  let view;
   try {
-    // Récupérer les métadonnées (utiliser le chemin relatif comme clé)
-    const metadata = copcMetadataCache.get(relativePath);
-    if (!metadata) {
-      console.error(`Métadonnées non trouvées pour ${relativePath}`);
-      return null;
-    }
-    
-    const nodeMetadata = metadata.nodes.get(nodeKey);
-    if (!nodeMetadata) {
-      console.error(`Node ${nodeKey} non trouvé dans les métadonnées`);
-      return null;
-    }
-    
-    // ⚡ Délai réduit pour accélérer le chargement
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    // Charger les données du node
     const lazPerf = await initLazPerf();
-    const view = await Copc.loadPointDataView(
+    view = await Copc.loadPointDataView(
       metadata.getter,
       metadata.copc,
       nodeMetadata.nodeData,
       { lazPerf }
     );
-    
-    // Extraire les données
+  } catch (error) {
+    console.error(`❌ Erreur lors du chargement du node ${nodeKey} du fichier ${relativePath}:`, error);
+    // Retourner null pour indiquer que le node n'a pas pu être chargé
+    return null;
+  }
+  
+  // Extraire les données avec gestion d'erreur
+  try {
     const pointCount = nodeMetadata.pointCount;
     const positions = new Float32Array(pointCount * 3);
     const colors = new Float32Array(pointCount * 3);
@@ -786,8 +840,9 @@ async function loadSingleNode(
     
     return nodeData;
   } catch (error) {
-    // Propager l'erreur pour que processLoadQueue gère le retry
-    throw error;
+    console.error(`❌ Erreur lors de l'extraction des données du node ${nodeKey} du fichier ${relativePath}:`, error);
+    // Retourner null pour indiquer que le node n'a pas pu être traité
+    return null;
   }
 }
 
@@ -1779,11 +1834,31 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
         
         // Étape 1 : Charger les métadonnées de tous les fichiers
         // Les chemins sont déjà des chemins relatifs, ils seront résolus dans loadCOPCMetadata
-        const metadataPromises = lazFilePaths.map(async (filePath) => {
-          return await loadCOPCMetadata(filePath);
-        });
+        // Utiliser Promise.allSettled pour continuer même si certains fichiers échouent
+        const metadataResults: Array<{ filePath: string; metadata: Awaited<ReturnType<typeof loadCOPCMetadata>> | null }> = [];
         
-        const allMetadata = await Promise.all(metadataPromises);
+        for (const filePath of lazFilePaths) {
+          try {
+            const metadata = await loadCOPCMetadata(filePath);
+            metadataResults.push({ filePath, metadata });
+          } catch (error) {
+            console.error(`❌ Impossible de charger les métadonnées pour ${filePath}:`, error);
+            metadataResults.push({ filePath, metadata: null });
+          }
+        }
+        
+        // Filtrer les résultats null (fichiers qui ont échoué)
+        const successfulResults = metadataResults.filter(r => r.metadata !== null);
+        const allMetadata = successfulResults.map(r => r.metadata!);
+        const successfulFilePaths = successfulResults.map(r => r.filePath);
+        
+        if (allMetadata.length === 0) {
+          throw new Error('Aucun fichier n\'a pu être chargé. Vérifiez que les fichiers existent et sont accessibles.');
+        }
+        
+        if (allMetadata.length < lazFilePaths.length) {
+          console.warn(`⚠️ ${lazFilePaths.length - allMetadata.length} fichier(s) n'ont pas pu être chargé(s) sur ${lazFilePaths.length}`);
+        }
         
         if (!isMounted) return;
         
@@ -1798,42 +1873,72 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
         
         console.log(`✅ Métadonnées chargées. Bounds globaux:`, { min: globalMin, max: globalMax });
         
-        // Étape 2 : Charger uniquement le niveau 1 de tous les fichiers
-        console.log(`📥 Chargement du niveau 1 de tous les fichiers...`);
+        // Étape 2 : Charger uniquement le niveau 1 de tous les fichiers qui ont réussi
+        console.log(`📥 Chargement du niveau 1 de ${successfulFilePaths.length} fichier(s)...`);
         
-        const level1Promises = lazFilePaths.map(async (filePath) => {
+        // Charger les nodes de manière séquentielle par fichier pour éviter de surcharger le serveur
+        // et permettre une meilleure gestion des erreurs
+        for (const filePath of successfulFilePaths) {
           const metadata = copcMetadataCache.get(filePath);
-          if (!metadata) return [];
+          if (!metadata) continue;
           
           // Trouver tous les nodes de niveau 1
           const level1Nodes = Array.from(metadata.nodes.values()).filter(node => node.level === 1);
           
-          // Charger les données de ces nodes
-          const nodePromises = level1Nodes.map(node => loadSingleNode(filePath, node.key));
-          return await Promise.all(nodePromises);
-        });
-        
-        await Promise.all(level1Promises);
+          // Charger les nodes avec gestion d'erreur individuelle
+          // Limiter le parallélisme à 3 nodes à la fois pour éviter de surcharger
+          const batchSize = 3;
+          for (let i = 0; i < level1Nodes.length; i += batchSize) {
+            const batch = level1Nodes.slice(i, i + batchSize);
+            const batchPromises = batch.map(async (node) => {
+              try {
+                return await loadSingleNode(filePath, node.key);
+              } catch (error) {
+                console.error(`❌ Erreur lors du chargement du node ${node.key} du fichier ${filePath}:`, error);
+                return null;
+              }
+            });
+            
+            await Promise.all(batchPromises);
+            
+            // Petit délai entre les batches pour éviter de surcharger le serveur
+            if (i + batchSize < level1Nodes.length) {
+              await new Promise(resolve => setTimeout(resolve, 50));
+            }
+          }
+        }
         
         if (!isMounted) return;
         
         console.log(`✅ Niveau 1 chargé pour tous les fichiers`);
         
         // Initialiser l'affichage avec le niveau 1
+        // Ne inclure que les nodes qui ont été chargés avec succès
         const initialNodesToRender: { fileUrl: string; nodeKey: string; level: number; distance: number }[] = [];
-        for (const filePath of lazFilePaths) {
+        for (const filePath of successfulFilePaths) {
           const metadata = copcMetadataCache.get(filePath);
           if (!metadata) continue;
           
           const level1Nodes = Array.from(metadata.nodes.values()).filter(node => node.level === 1);
           for (const node of level1Nodes) {
-            initialNodesToRender.push({
-              fileUrl: filePath,
-              nodeKey: node.key,
-              level: 1,
-              distance: 0 // Distance sera calculée par le LOD manager
-            });
+            // Vérifier que les données du node sont en cache (chargées avec succès)
+            const cacheKey = `${filePath}_${node.key}`;
+            const nodeData = nodeDataCache.get(cacheKey);
+            if (nodeData) {
+              initialNodesToRender.push({
+                fileUrl: filePath,
+                nodeKey: node.key,
+                level: 1,
+                distance: 0 // Distance sera calculée par le LOD manager
+              });
+            }
           }
+        }
+        
+        if (initialNodesToRender.length === 0) {
+          console.warn(`⚠️ Aucun node de niveau 1 n'a pu être chargé. L'affichage sera vide.`);
+        } else {
+          console.log(`✅ ${initialNodesToRender.length} node(s) de niveau 1 prêt(s) pour l'affichage`);
         }
         
         setNodesToRender(initialNodesToRender);
