@@ -2359,6 +2359,7 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
             maxLOD={0}
             onMaxLODChange={() => {}}
             maxAvailableLevel={0}
+            closed={true}
           />
           
           {/* Axes de référence pour l'orientation */}

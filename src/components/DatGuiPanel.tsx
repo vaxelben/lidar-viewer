@@ -31,6 +31,7 @@ interface DatGuiPanelProps {
   maxLOD: number;
   onMaxLODChange: (lod: number) => void;
   maxAvailableLevel: number;
+  closed: boolean;
 }
 
 // Composant de monitoring FPS (dans le Canvas)
@@ -79,7 +80,8 @@ export function DatGuiPanel({
   onColorModeChange,
   maxLOD,
   onMaxLODChange,
-  maxAvailableLevel
+  maxAvailableLevel,
+  closed
 }: DatGuiPanelProps) {
   const guiRef = useRef<dat.GUI | null>(null);
   const [_fps, setFps] = useState(60);
@@ -151,7 +153,7 @@ export function DatGuiPanel({
     // ========================================
     // 📊 DOSSIER PERFORMANCE (lecture seule)
     // ========================================
-    const perfFolder = gui.addFolder('📊 Performance');
+    const perfFolder = gui.addFolder('Performance');
     
     perfFolder.add(controlsRef.current, 'FPS')
       .listen() // Écouter les changements
@@ -178,6 +180,7 @@ export function DatGuiPanel({
     };
   }, [
     maxAvailableLevel, 
+    closed,
     onPointSizeChange, 
     onEdlEnabledChange, 
     onEdlStrengthChange, 
