@@ -23,23 +23,6 @@ function App() {
     '/data/metz/LHD_FXX_0932_6895_PTS_LAMB93_IGN69.copc.laz',
     '/data/metz/LHD_FXX_0932_6896_PTS_LAMB93_IGN69.copc.laz',
     '/data/metz/LHD_FXX_0932_6897_PTS_LAMB93_IGN69.copc.laz',
-    // '/data/boulay/LHD_FXX_0953_6903_PTS_LAMB93_IGN69.copc.laz',
-    // '/data/boulay/LHD_FXX_0953_6904_PTS_LAMB93_IGN69.copc.laz',
-    // '/data/boulay/LHD_FXX_0953_6905_PTS_LAMB93_IGN69.copc.laz',
-    // '/data/boulay/LHD_FXX_0954_6903_PTS_LAMB93_IGN69.copc.laz',
-    // '/data/boulay/LHD_FXX_0954_6904_PTS_LAMB93_IGN69.copc.laz',
-    // '/data/boulay/LHD_FXX_0954_6905_PTS_LAMB93_IGN69.copc.laz',
-    // '/data/boulay/LHD_FXX_0955_6903_PTS_LAMB93_IGN69.copc.laz',
-    // '/data/boulay/LHD_FXX_0955_6904_PTS_LAMB93_IGN69.copc.laz',
-    // '/data/boulay/LHD_FXX_0955_6905_PTS_LAMB93_IGN69.copc.laz',
-    // '/data/strasbourg/LHD_FXX_1047_6842_PTS_LAMB93_IGN69.copc.laz',
-    // '/data/strasbourg/LHD_FXX_1047_6843_PTS_LAMB93_IGN69.copc.laz',
-    // '/data/strasbourg/LHD_FXX_1048_6842_PTS_LAMB93_IGN69.copc.laz',
-    // '/data/strasbourg/LHD_FXX_1048_6843_PTS_LAMB93_IGN69.copc.laz',
-    // '/data/strasbourg/LHD_FXX_1049_6842_PTS_LAMB93_IGN69.copc.laz',
-    // '/data/strasbourg/LHD_FXX_1049_6843_PTS_LAMB93_IGN69.copc.laz',
-    // '/data/strasbourg/LHD_FXX_1050_6842_PTS_LAMB93_IGN69.copc.laz',
-    // '/data/strasbourg/LHD_FXX_1050_6843_PTS_LAMB93_IGN69.copc.laz',
   ]);
 
   return (

@@ -64,12 +64,10 @@ function extractFileName(path: string): string {
 function addCorsProxyIfNeeded(url: string): string {
   // Détecter si c'est une URL GitHub Releases (qui ne supporte pas CORS)
   if (url.includes('github.com') && url.includes('/releases/download/')) {
-    // Utiliser corsproxy.io qui supporte les requêtes Range pour les fichiers binaires
-    // Note: corsproxy.io transmet les headers Range correctement
     return `https://corsproxy.io/?${encodeURIComponent(url)}`;
   }
   
-  // Pour Cloudflare R2, AWS S3, GCS, etc. : pas de proxy nécessaire (CORS natif)
+  // Pour Cloudflare R2/Worker, AWS S3, GCS : pas de proxy nécessaire
   return url;
 }
 
@@ -106,7 +104,10 @@ export async function resolveDataUrl(relativePath: string): Promise<string> {
   const isGitHubReleases = githubReleasesPattern.test(baseUrl);
   
   // Détecter Cloudflare R2 (optionnel - pour utiliser uniquement le nom de fichier)
-  const isCloudflareR2 = baseUrl.includes('.r2.dev') || baseUrl.includes('r2.cloudflarestorage.com');
+  const isCloudflareR2 =
+    baseUrl.includes('.r2.dev') ||
+    baseUrl.includes('r2.cloudflarestorage.com') ||
+    baseUrl.includes('.workers.dev');
   
   console.log(`🔍 Résolution URL: baseUrl="${baseUrl}", isGitHubReleases=${isGitHubReleases}, isR2=${isCloudflareR2}, relativePath="${relativePath}"`);
   
@@ -155,7 +156,10 @@ export async function resolveDataUrls(relativePaths: string[]): Promise<string[]
   // Pour GitHub Releases et Cloudflare R2, utiliser uniquement le nom du fichier
   const githubReleasesPattern = /github\.com\/.*\/releases\/download\//i;
   const isGitHubReleases = githubReleasesPattern.test(baseUrl);
-  const isCloudflareR2 = baseUrl.includes('.r2.dev') || baseUrl.includes('r2.cloudflarestorage.com');
+  const isCloudflareR2 =
+    baseUrl.includes('.r2.dev') ||
+    baseUrl.includes('r2.cloudflarestorage.com') ||
+    baseUrl.includes('.workers.dev');
 
   return relativePaths.map(path => {
     let filePath: string;
