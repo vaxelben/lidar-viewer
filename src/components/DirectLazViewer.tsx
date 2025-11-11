@@ -853,10 +853,10 @@ async function loadSingleNode(
 }
 
 // Interface pour les contrôles CameraControls
-interface CameraControlsType {
-  target: THREE.Vector3;
-  update: () => void;
-}
+// interface CameraControlsType {
+//   target: THREE.Vector3;
+//   update: () => void;
+// }
 
 // Composant pour configurer la caméra (utilisé dans le JSX ci-dessous)
 // function CameraSetup({ bounds }: { bounds: { min: THREE.Vector3; max: THREE.Vector3 } }) {
