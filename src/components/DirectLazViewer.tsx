@@ -2036,7 +2036,7 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
     // Créer le panneau
     const pane = new Pane({
       title: 'Paramètres',
-      expanded: true,
+      expanded: false,
     });
     
     paneRef.current = pane;
