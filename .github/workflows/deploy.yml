@@ -40,14 +40,13 @@ jobs:
           # Pour un dépôt user/organization à la racine : /
           BASE_PATH: '/lidar-viewer/'
 
-      - name: Configure data URL for GitHub Releases
+      - name: Configure data URL for Cloudflare R2
         run: |
-          # Configurer l'URL de base pour pointer vers GitHub Releases
-          # Remplacez 'v1.0.0-data' par le tag de votre release
+          # Configurer l'URL de base pour pointer vers Cloudflare R2
           cat > dist/data-config.json << 'EOF'
           {
-            "dataBaseUrl": "https://github.com/vaxelben/lidar-viewer/releases/download/v1.0.0-data",
-            "description": "Configuration pour les fichiers de données LiDAR hébergés sur GitHub Releases"
+            "dataBaseUrl": "https://pub-f014095bd3804df3bb311a5b0ea153a2.r2.dev",
+            "description": "Configuration pour les fichiers de données LiDAR hébergés sur Cloudflare R2"
           }
           EOF
           
