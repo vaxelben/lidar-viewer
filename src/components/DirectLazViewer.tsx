@@ -264,7 +264,7 @@ async function loadLAZFile(
   
   // Vérifier si le fichier est déjà en cours de chargement
   if (loadingCache.get(cacheKey)) {
-    console.log(`⏳ Chargement déjà en cours pour ${url}, attente...`);
+    console.log(`Chargement déjà en cours pour ${url}, attente...`);
     // Attendre que le chargement soit terminé
     while (loadingCache.get(cacheKey)) {
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -272,7 +272,7 @@ async function loadLAZFile(
     // Retourner les données du cache
     const cached = loadedDataCache.get(cacheKey);
     if (cached) {
-      console.log(`✅ Données récupérées du cache pour ${url}`);
+      console.log(`Données récupérées du cache pour ${url}`);
       // S'assurer que les bounds sont des Vector3 valides
       return {
         ...cached,
@@ -287,7 +287,7 @@ async function loadLAZFile(
   // Vérifier si les données sont déjà en cache
   const cached = loadedDataCache.get(cacheKey);
   if (cached) {
-    console.log(`✅ Fichier déjà chargé (cache), retour immédiat pour ${url}`);
+    console.log(`Fichier déjà chargé (cache), retour immédiat pour ${url}`);
     // S'assurer que les bounds sont des Vector3 valides
     return {
       ...cached,
@@ -300,7 +300,7 @@ async function loadLAZFile(
   
   // Marquer comme en cours de chargement
   loadingCache.set(cacheKey, true);
-  console.log(`📥 Début du chargement du fichier avec copc.js: ${url}`);
+  console.log(`Début du chargement du fichier avec copc.js: ${url}`);
   
   try {
     // Initialiser laz-perf
@@ -346,7 +346,7 @@ async function loadLAZFile(
       
       const level = getNodeLevel(key);
       
-      // ⚡ Filtrer par niveau de détail (LOD)
+      // Filtrer par niveau de détail (LOD)
       if (level > maxLOD) {
         continue;
       }
@@ -368,7 +368,7 @@ async function loadLAZFile(
     
     // const maxPointsDisplay = maxPointsLimit === Infinity ? 'Illimité' : maxPointsLimit.toLocaleString('fr-FR');
     // const maxLODDisplay = maxLOD === Infinity ? 'Tous niveaux' : `Niveaux 0-${maxLOD}`;
-    // console.log(`📊 Statistiques de chargement:`);
+    // console.log(`Statistiques de chargement:`);
     // console.log(`  - Total de nodes disponibles: ${totalNodes}`);
     // console.log(`  - Niveau de détail max: ${maxLODDisplay}`);
     // console.log(`  - Nodes à charger: ${nodesToLoad.length}`);
@@ -377,7 +377,7 @@ async function loadLAZFile(
     // Afficher les statistiques par niveau
     // const levels = Object.keys(levelStats).map(Number).sort((a, b) => a - b);
     // if (levels.length > 0) {
-    //   console.log(`\n📈 Distribution par niveau:`);
+    //   console.log(`\nDistribution par niveau:`);
     //   for (const level of levels) {
     //     const stats = levelStats[level];
     //     console.log(`  Niveau ${level}: ${stats.count} nodes, ${stats.points.toLocaleString('fr-FR')} points`);
@@ -385,7 +385,7 @@ async function loadLAZFile(
     //   console.log('');
     // }
     
-    // ⚡ Grouper les nodes par niveau pour chargement progressif
+    // Grouper les nodes par niveau pour chargement progressif
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const nodesByLevel: { [level: number]: { key: string; node: any }[] } = {};
     for (const { key, node, level } of nodesToLoad) {
@@ -396,7 +396,7 @@ async function loadLAZFile(
     }
     
     const allLevels = Object.keys(nodesByLevel).map(Number).sort((a, b) => a - b);
-    // console.log(`🎯 Chargement par niveaux: ${allLevels.join(', ')}`);
+    // console.log(`Chargement par niveaux: ${allLevels.join(', ')}`);
     
     // Variables globales pour accumulation
     const allPositions = new Float32Array(estimatedTotalPoints * 3);
@@ -408,15 +408,15 @@ async function loadLAZFile(
     let totalPoints = 0;
     let hasRGBColors = false;
     
-    // ⚡ Chargement séquentiel (un node à la fois) pour éviter les erreurs "Failed to fetch"
+    // Chargement séquentiel (un node à la fois) pour éviter les erreurs "Failed to fetch"
     // Pas de parallélisation pour garantir la stabilité
     
-    // ⚡ Charger niveau par niveau (priorité au niveau 1)
+    // Charger niveau par niveau (priorité au niveau 1)
     for (const level of allLevels) {
       const levelNodes = nodesByLevel[level];
       const levelPointsStart = currentPointIndex;
       
-      // console.log(`\n📚 === Niveau ${level}: ${levelNodes.length} nodes ===`);
+      // console.log(`\n=== Niveau ${level}: ${levelNodes.length} nodes ===`);
       
       // Charger chaque node séquentiellement
       for (let i = 0; i < levelNodes.length; i++) {
@@ -497,7 +497,7 @@ async function loadLAZFile(
         }
       }
       
-      // ⚡ CALLBACK après chaque niveau chargé
+      // CALLBACK après chaque niveau chargé
       const levelPointsEnd = currentPointIndex;
       const levelPointCount = levelPointsEnd - levelPointsStart;
       
@@ -513,7 +513,7 @@ async function loadLAZFile(
           max: new THREE.Vector3(copc.header.max[0], copc.header.max[1], copc.header.max[2])
         };
         
-        console.log(`✅ Niveau ${level} terminé: ${levelPointCount.toLocaleString('fr-FR')} points`);
+        console.log(`Niveau ${level} terminé: ${levelPointCount.toLocaleString('fr-FR')} points`);
         
         levelCallback({
           level,
@@ -570,7 +570,7 @@ async function loadLAZFile(
       console.log("Aucune classification trouvée dans ce fichier");
     }
     
-    // ⚡ Les données sont déjà dans des TypedArrays pré-alloués !
+    // Les données sont déjà dans des TypedArrays pré-alloués !
     // Si le nombre de points chargés est inférieur à l'estimation, on crée des vues plus petites
     const positions = totalPoints < estimatedTotalPoints 
       ? allPositions.slice(0, totalPoints * 3)
@@ -602,7 +602,7 @@ async function loadLAZFile(
       )
     };
     
-    console.log("✅ Extraction terminée:", {
+    console.log("Extraction terminée:", {
       points: totalPoints,
       hasRGBColors,
       memoryUsed: `${((positions.byteLength + colors.byteLength + intensities.byteLength + classifications.byteLength) / 1024 / 1024).toFixed(2)} MB`,
@@ -629,7 +629,7 @@ async function loadLAZFile(
     // Libérer le verrou de chargement
     loadingCache.set(cacheKey, false);
     
-    console.log(`✅ Fichier chargé et mis en cache: ${url}`);
+    console.log(`Fichier chargé et mis en cache: ${url}`);
     
     return result;
   } catch (error) {
@@ -637,7 +637,7 @@ async function loadLAZFile(
     loadingCache.set(cacheKey, false);
     loadedDataCache.delete(cacheKey);
     
-    console.error(`❌ Erreur lors du chargement du fichier ${url}:`, error);
+    console.error(`Erreur lors du chargement du fichier ${url}:`, error);
     throw error; // Propager l'erreur
   }
 }
