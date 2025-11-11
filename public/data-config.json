@@ -1,13 +1,4 @@
 {
   "dataBaseUrl": "https://pub-f014095bd3804df3bb311a5b0ea153a2.r2.dev",
-  "description": "Configuration pour les fichiers de données LiDAR hébergés sur GitHub Releases. Pour tester en local avec les fichiers dans public/, remettez dataBaseUrl à ''.",
-  "examples": {
-    "local": "",
-    "githubReleases": "https://github.com/vaxelben/lidar-viewer/releases/download/v1.0.0-data",
-    "awsS3": "https://votre-bucket.s3.amazonaws.com/lidar-data",
-    "googleCloudStorage": "https://storage.googleapis.com/votre-bucket/lidar-data",
-    "cloudflareR2": "https://votre-compte.r2.cloudflarestorage.com/lidar-data",
-    "jsdelivr": "https://cdn.jsdelivr.net/gh/vaxelben/lidar-viewer@main/public"
-  }
+  "description": "Configuration pour les fichiers de données LiDAR hébergés sur Cloudflare R2",
 }
-
