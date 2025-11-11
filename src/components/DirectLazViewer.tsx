@@ -1774,8 +1774,8 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
   lazFilePaths,
   pointSize = 0.5
 }) => {
-  // const [loading, setLoading] = useState<boolean>(true);
-  // const [progress, setProgress] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [progress, setProgress] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const [pointData, setPointData] = useState<{
     positions: Float32Array;
@@ -1835,6 +1835,8 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
     async function loadInitialData() {
       try {
         setError(null);
+        setLoading(true);
+        setProgress(0);
         console.log(`[LOAD] Chargement des métadonnées de ${lazFilePaths.length} fichier(s)`);
         
         // Étape 1 : Charger les métadonnées de tous les fichiers
@@ -1842,8 +1844,10 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
         // Utiliser Promise.allSettled pour continuer même si certains fichiers échouent
         const metadataResults: Array<{ filePath: string; metadata: Awaited<ReturnType<typeof loadCOPCMetadata>> | null }> = [];
         
-        for (const filePath of lazFilePaths) {
+        for (let i = 0; i < lazFilePaths.length; i++) {
+          const filePath = lazFilePaths[i];
           try {
+            setProgress((i / lazFilePaths.length) * 0.3); // 0-30% pour les métadonnées
             const metadata = await loadCOPCMetadata(filePath);
             metadataResults.push({ filePath, metadata });
           } catch (error) {
@@ -1876,13 +1880,26 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
           globalMax.max(metadata.bounds.max);
         }
         
+        setProgress(0.3); // 30% - métadonnées chargées
         console.log(`[OK] Métadonnées chargées. Bounds globaux:`, { min: globalMin, max: globalMax });
         
         // Étape 2 : Charger uniquement le niveau 1 de tous les fichiers qui ont réussi
+        setProgress(0.35); // 35%
         console.log(`[LOAD] Chargement du niveau 1 de ${successfulFilePaths.length} fichier(s)...`);
         
         // Charger les nodes de manière séquentielle par fichier pour éviter de surcharger le serveur
         // et permettre une meilleure gestion des erreurs
+        let totalNodes = 0;
+        let loadedNodes = 0;
+        
+        // Calculer le nombre total de nodes de niveau 1
+        for (const filePath of successfulFilePaths) {
+          const metadata = copcMetadataCache.get(filePath);
+          if (metadata) {
+            totalNodes += Array.from(metadata.nodes.values()).filter(node => node.level === 1).length;
+          }
+        }
+        
         for (const filePath of successfulFilePaths) {
           const metadata = copcMetadataCache.get(filePath);
           if (!metadata) continue;
@@ -1905,6 +1922,11 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
             });
             
             await Promise.all(batchPromises);
+            loadedNodes += batch.length;
+            
+            // Mise à jour de la progression (35% à 90% pour le chargement des nodes)
+            const nodeProgress = 0.35 + (loadedNodes / totalNodes) * 0.55;
+            setProgress(nodeProgress);
             
             // Petit délai entre les batches pour éviter de surcharger le serveur
             if (i + batchSize < level1Nodes.length) {
@@ -1915,6 +1937,7 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
         
         if (!isMounted) return;
         
+        setProgress(0.9); // 90%
         console.log(`[OK] Niveau 1 chargé pour tous les fichiers`);
         
         // Initialiser l'affichage avec le niveau 1
@@ -1962,12 +1985,19 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
         setVisibleClassifications(new Set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]));
         setMetadataLoaded(true);
         
+        setProgress(1.0); // 100%
         console.log(`[READY] Affichage initial prêt avec ${initialNodesToRender.length} nodes de niveau 1`);
+        
+        // Masquer le preloader après un court délai
+        setTimeout(() => {
+          setLoading(false);
+        }, 500);
         
       } catch (err) {
         if (isMounted) {
           console.error("Erreur lors du chargement initial:", err);
           setError(err instanceof Error ? err.message : String(err));
+          setLoading(false);
         }
       }
     }
@@ -2110,7 +2140,7 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
       options: {
         'Classification': 'classification',
         'Altitude': 'altitude',
-        'Naturelle': 'natural'
+        // 'Naturelle': 'natural'
       }
     }).on('change', (ev: { value: string }) => {
       setColorMode(ev.value as 'classification' | 'altitude' | 'natural');
@@ -2169,23 +2199,53 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
   
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-      {/* {loading && (
+      {loading && (
         <div style={{ 
           position: 'absolute', 
-          top: '50%', 
-          left: '50%', 
-          transform: 'translate(-50%, -50%)',
-          background: 'rgba(0,0,0,0.8)',
+          top: '0',
+          left: '0',
+          width: '100%',
+          height: '100%',
+          background: '#000000',
           color: 'white',
-          padding: '20px',
-          borderRadius: '8px',
-          textAlign: 'center',
-          zIndex: 1000
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          fontFamily: 'system-ui, -apple-system, sans-serif'
         }}>
-          <h3>Chargement du fichier...</h3>
-          <p>{Math.round(progress * 100)}%</p>
+          <div style={{
+            textAlign: 'center',
+            width: '300px'
+          }}>
+            <div style={{ 
+              fontSize: '14px', 
+              fontWeight: '400',
+              marginBottom: '10px',
+              color: '#ffffff'
+            }}>
+              {Math.round(progress * 100)}%
+            </div>
+            
+            <div style={{
+              width: '100%',
+              height: '4px',
+              background: '#333333',
+              borderRadius: '2px',
+              overflow: 'hidden'
+            }}>
+              <div style={{
+                width: `${Math.round(progress * 100)}%`,
+                height: '100%',
+                background: '#ffffff',
+                borderRadius: '2px',
+                transition: 'width 0.3s ease'
+              }} />
+            </div>
+          </div>
         </div>
-      )} */}
+      )}
       
       {error && (
         <div style={{ 
