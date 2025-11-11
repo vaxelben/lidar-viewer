@@ -12,11 +12,13 @@ dist
 dist-ssr
 *.local
 
-CLOUDFARE_R2_SETUP.md
+CLOUDFLARE_R2_SETUP.md
 R2_SECURITY.md
 upload-to-r2.ps1
 
 public/data
+
+.wrangler/
 
 potree_converter
 
