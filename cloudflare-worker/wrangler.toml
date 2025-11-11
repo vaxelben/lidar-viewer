@@ -1,0 +1,19 @@
+# Configuration pour le Worker Cloudflare R2 Proxy
+name = "r2-proxy-worker"
+main = "r2-proxy.js"
+compatibility_date = "2024-01-01"
+
+# Binding R2 - IMPORTANT : remplacez par le nom de votre bucket
+[[r2_buckets]]
+binding = "LIDAR_BUCKET"
+bucket_name = "lidar-data"  # ← Remplacez par le nom exact de votre bucket R2
+
+# Routes (optionnel - pour custom domain)
+# routes = [
+#   { pattern = "lidar.votredomaine.com/*", zone_name = "votredomaine.com" }
+# ]
+
+# Limites (optionnel)
+# [limits]
+# cpu_ms = 50
+

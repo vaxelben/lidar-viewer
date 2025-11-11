@@ -2049,61 +2049,6 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
       18: "Bruit élevé",
     };
     
-    // ⚡ Ajouter un dossier pour les seuils de distance du LOD dynamique
-    const lodFolder = (pane as unknown as { addFolder: (config: { title: string; expanded: boolean }) => unknown }).addFolder({
-      title: 'LOD Dynamique - Seuils',
-      expanded: true,
-    });
-    
-    const lodParams = {
-      thresholdVeryClose: lodDistanceThresholds[0],
-      thresholdClose: lodDistanceThresholds[1],
-      thresholdMedium: lodDistanceThresholds[2],
-      thresholdFar: lodDistanceThresholds[3]
-    };
-    
-    // Seuils de distance pour le LOD dynamique
-    (lodFolder as unknown as { addBinding: (obj: Record<string, number>, key: string, options?: Record<string, unknown>) => { on: (event: string, handler: (ev: { value: number }) => void) => void } }).addBinding(lodParams, 'thresholdVeryClose', {
-      label: 'Seuil Très Proche (LOD 4)',
-      min: 0.1,
-      max: 2.0,
-      step: 0.1
-    }).on('change', (ev: { value: number }) => {
-      setLodDistanceThresholds(prev => [ev.value, prev[1], prev[2], prev[3]]);
-    });
-    
-    (lodFolder as unknown as { addBinding: (obj: Record<string, number>, key: string, options?: Record<string, unknown>) => { on: (event: string, handler: (ev: { value: number }) => void) => void } }).addBinding(lodParams, 'thresholdClose', {
-      label: 'Seuil Proche (LOD 3)',
-      min: 0.5,
-      max: 3.0,
-      step: 0.1
-    }).on('change', (ev: { value: number }) => {
-      setLodDistanceThresholds(prev => [prev[0], ev.value, prev[2], prev[3]]);
-    });
-    
-    (lodFolder as unknown as { addBinding: (obj: Record<string, number>, key: string, options?: Record<string, unknown>) => { on: (event: string, handler: (ev: { value: number }) => void) => void } }).addBinding(lodParams, 'thresholdMedium', {
-      label: 'Seuil Moyen (LOD 2)',
-      min: 1.0,
-      max: 5.0,
-      step: 0.1
-    }).on('change', (ev: { value: number }) => {
-      setLodDistanceThresholds(prev => [prev[0], prev[1], ev.value, prev[3]]);
-    });
-    
-    (lodFolder as unknown as { addBinding: (obj: Record<string, number>, key: string, options?: Record<string, unknown>) => { on: (event: string, handler: (ev: { value: number }) => void) => void } }).addBinding(lodParams, 'thresholdFar', {
-      label: 'Seuil Loin (LOD 1)',
-      min: 2.0,
-      max: 10.0,
-      step: 0.1
-    }).on('change', (ev: { value: number }) => {
-      setLodDistanceThresholds(prev => [prev[0], prev[1], prev[2], ev.value]);
-    });
-    
-    // Ajouter un séparateur
-    (pane as unknown as { addBlade: (config: { view: string }) => void }).addBlade({
-      view: 'separator'
-    });
-    
     // Ajouter un dossier pour les paramètres EDL
     const edlFolder = (pane as unknown as { addFolder: (config: { title: string; expanded: boolean }) => unknown }).addFolder({
       title: 'Eye-Dome Lighting (EDL)',
