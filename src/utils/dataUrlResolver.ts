@@ -109,13 +109,13 @@ export async function resolveDataUrl(relativePath: string): Promise<string> {
     baseUrl.includes('r2.cloudflarestorage.com') ||
     baseUrl.includes('.workers.dev');
   
-  console.log(`🔍 Résolution URL: baseUrl="${baseUrl}", isGitHubReleases=${isGitHubReleases}, isR2=${isCloudflareR2}, relativePath="${relativePath}"`);
+  console.log(`Résolution URL: baseUrl="${baseUrl}", isGitHubReleases=${isGitHubReleases}, isR2=${isCloudflareR2}, relativePath="${relativePath}"`);
   
   let filePath: string;
   if (isGitHubReleases || isCloudflareR2) {
     // Pour GitHub Releases et R2 : utiliser uniquement le nom du fichier
     filePath = extractFileName(relativePath);
-    console.log(`✅ ${isGitHubReleases ? 'GitHub Releases' : 'Cloudflare R2'}: ${relativePath} -> ${filePath}`);
+    console.log(`${isGitHubReleases ? 'GitHub Releases' : 'Cloudflare R2'}: ${relativePath} -> ${filePath}`);
   } else {
     // Pour les autres sources (S3, GCS avec structure de dossiers), garder le chemin complet
     const cleanPath = relativePath.startsWith('/') ? relativePath.slice(1) : relativePath;
@@ -124,7 +124,7 @@ export async function resolveDataUrl(relativePath: string): Promise<string> {
   
   const url = `${baseUrl}/${filePath}`;
   const finalUrl = addCorsProxyIfNeeded(url);
-  console.log(`📦 URL finale: ${finalUrl}`);
+  console.log(`URL finale: ${finalUrl}`);
   return finalUrl;
 }
 
