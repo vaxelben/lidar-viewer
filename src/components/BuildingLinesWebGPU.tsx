@@ -14,7 +14,7 @@ const BUILDING_CLASSIFICATION = 6;
 const MAX_THRESHOLD = 10.0;  // 10 cm maximum - ajustez selon votre densité de points
 const PLAYER_RADIUS = 200;
 const MAX_VALENCE = 3;
-const MAX_POINTS = 100000;
+const MAX_POINTS = 25000;
 const DEBUG_POINT_INDEX = 0; // On va débugger le premier point en détail
 
 // Compute shader WGSL simplifié pour calculer les connexions

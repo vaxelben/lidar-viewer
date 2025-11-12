@@ -43,17 +43,34 @@ export function DatGuiStatsMonitor({
   const lastTime = useRef(performance.now());
   const frames = useRef(0);
   const fpsUpdateInterval = useRef(0);
+  const frameTimes = useRef<number[]>([]); // Garder les 10 derniers frame times
+  const maxFrameTimeHistory = 10;
 
   useFrame(() => {
-    frames.current++;
     const now = performance.now();
     const delta = now - lastTime.current;
+    
+    // Mesurer le temps réel de cette frame
+    frameTimes.current.push(delta);
+    if (frameTimes.current.length > maxFrameTimeHistory) {
+      frameTimes.current.shift();
+    }
+    
+    frames.current++;
     fpsUpdateInterval.current += delta;
 
     // Mettre à jour toutes les 200ms
     if (fpsUpdateInterval.current >= 200) {
       const fps = Math.round((frames.current * 1000) / fpsUpdateInterval.current);
-      const frameTime = fpsUpdateInterval.current / frames.current;
+      
+      // Calculer le frame time moyen et max pour détecter les pics
+      const avgFrameTime = fpsUpdateInterval.current / frames.current;
+      const maxFrameTime = Math.max(...frameTimes.current);
+      
+      // Utiliser le frame time max si il est significativement plus élevé que la moyenne
+      // Cela permet de détecter les saccades même si la moyenne est bonne
+      const frameTime = maxFrameTime > avgFrameTime * 1.5 ? maxFrameTime : avgFrameTime;
+      
       onStatsUpdate(fps, frameTime);
       frames.current = 0;
       fpsUpdateInterval.current = 0;
@@ -90,6 +107,7 @@ export function DatGuiPanel({
     // Stats (lecture seule, mais dat.gui les affichera)
     FPS: 60,
     'Frame Time (ms)': 16.7,
+    'Frame Time Max (ms)': 16.7,
     'Points affichés': 0,
     'Mémoire (MB)': 0,
     
@@ -108,10 +126,27 @@ export function DatGuiPanel({
     }
   });
 
+  const frameTimeMaxRef = useRef(0);
+  const maxResetCounterRef = useRef(0);
+  
   const handleStatsUpdate = (newFps: number, newFrameTime: number) => {
     // Mettre à jour les valeurs dans l'objet controls
     controlsRef.current.FPS = newFps;
     controlsRef.current['Frame Time (ms)'] = Math.round(newFrameTime * 100) / 100;
+    
+    // Suivre le frame time max (réinitialiser toutes les 2 secondes = 10 mises à jour à 200ms)
+    maxResetCounterRef.current++;
+    if (newFrameTime > frameTimeMaxRef.current) {
+      frameTimeMaxRef.current = newFrameTime;
+    }
+    
+    // Réinitialiser le max toutes les 2 secondes
+    if (maxResetCounterRef.current >= 10) {
+      frameTimeMaxRef.current = newFrameTime;
+      maxResetCounterRef.current = 0;
+    }
+    
+    controlsRef.current['Frame Time Max (ms)'] = Math.round(frameTimeMaxRef.current * 100) / 100;
     
     // Forcer la mise à jour de dat.gui
     if (guiRef.current) {
@@ -158,6 +193,10 @@ export function DatGuiPanel({
       .listen()
       .name('Frame Time');
     
+    perfFolder.add(controlsRef.current, 'Frame Time Max (ms)')
+      .listen()
+      .name('Frame Time Max');
+    
     perfFolder.add(controlsRef.current, 'Points affichés')
       .listen()
       .name('Points affichés');
@@ -166,8 +205,15 @@ export function DatGuiPanel({
       .listen()
       .name('Mémoire (MB)');
     
-    // Fermer le GUI par défaut
-    gui.close();
+    // Ouvrir le dossier Performance par défaut
+    perfFolder.open();
+    
+    // Ouvrir ou fermer le GUI selon la prop closed
+    if (closed) {
+      gui.close();
+    } else {
+      gui.open();
+    }
 
     // Nettoyer au démontage
     return () => {
@@ -198,6 +244,17 @@ export function DatGuiPanel({
       guiRef.current.updateDisplay();
     }
   }, [pointSize, edlEnabled, edlStrength, edlRadius, colorMode, maxLOD]);
+
+  // Mettre à jour l'état d'ouverture/fermeture quand la prop closed change
+  useEffect(() => {
+    if (guiRef.current) {
+      if (closed) {
+        guiRef.current.close();
+      } else {
+        guiRef.current.open();
+      }
+    }
+  }, [closed]);
 
   return <DatGuiStatsMonitor onStatsUpdate={handleStatsUpdate} />;
 }
