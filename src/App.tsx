@@ -5,12 +5,12 @@ import DirectLazViewer from './components/DirectLazViewer'
 function App() {
   // Initialiser directement avec le chemin par défaut pour éviter un double rendu
   const [lazFilePaths] = useState<string[]>([
-    '/data/metz/LHD_FXX_0927_6895_PTS_LAMB93_IGN69.copc.laz',
-    '/data/metz/LHD_FXX_0927_6896_PTS_LAMB93_IGN69.copc.laz',
-    '/data/metz/LHD_FXX_0927_6897_PTS_LAMB93_IGN69.copc.laz',
-    '/data/metz/LHD_FXX_0928_6895_PTS_LAMB93_IGN69.copc.laz',
-    '/data/metz/LHD_FXX_0928_6896_PTS_LAMB93_IGN69.copc.laz',
-    '/data/metz/LHD_FXX_0928_6897_PTS_LAMB93_IGN69.copc.laz',
+    // '/data/metz/LHD_FXX_0927_6895_PTS_LAMB93_IGN69.copc.laz',
+    // '/data/metz/LHD_FXX_0927_6896_PTS_LAMB93_IGN69.copc.laz',
+    // '/data/metz/LHD_FXX_0927_6897_PTS_LAMB93_IGN69.copc.laz',
+    // '/data/metz/LHD_FXX_0928_6895_PTS_LAMB93_IGN69.copc.laz',
+    // '/data/metz/LHD_FXX_0928_6896_PTS_LAMB93_IGN69.copc.laz',
+    // '/data/metz/LHD_FXX_0928_6897_PTS_LAMB93_IGN69.copc.laz',
     '/data/metz/LHD_FXX_0929_6895_PTS_LAMB93_IGN69.copc.laz',
     '/data/metz/LHD_FXX_0929_6896_PTS_LAMB93_IGN69.copc.laz',
     '/data/metz/LHD_FXX_0929_6897_PTS_LAMB93_IGN69.copc.laz',

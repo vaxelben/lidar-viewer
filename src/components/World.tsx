@@ -7,6 +7,7 @@ import {
   EDLEffect 
 } from './DirectLazViewer';
 import { PointCloudColliders } from './PointCloudColliders';
+import { BuildingLinesWebGPU } from './BuildingLinesWebGPU';
 import * as THREE from 'three';
 
 interface WorldProps {
@@ -122,7 +123,7 @@ export function World({
         maxLOD={0}
         onMaxLODChange={() => {}}
         maxAvailableLevel={0}
-        closed={true}
+        closed={false}
       />
 
       {/* Rendu dynamique des nodes */}
@@ -134,6 +135,14 @@ export function World({
           visibleClassifications={visibleClassifications}
           colorMode={colorMode}
           pointSize={currentPointSize}
+        />
+      )}
+
+      {/* Lignes entre les points de bâtiments proches (WebGPU) */}
+      {pointData && metadataLoaded && (
+        <BuildingLinesWebGPU
+          nodesToRender={nodesToRender}
+          globalBounds={pointData.bounds}
         />
       )}
 

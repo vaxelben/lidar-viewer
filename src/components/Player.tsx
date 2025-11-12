@@ -4,9 +4,9 @@ import { useKeyboardControls } from '@react-three/drei';
 import { RigidBody, CapsuleCollider, RapierRigidBody, useRapier } from '@react-three/rapier';
 import * as THREE from 'three';
 
-const SPEED = 250;
+const SPEED = 50;
 const JUMP_FORCE = 50;
-const PLAYER_HEIGHT = 30;
+const PLAYER_HEIGHT = 50;
 const RAYCAST_DISTANCE = 0.2; // Distance pour détecter le sol
 const MOUSE_SENSITIVITY = 0.002; // Sensibilité de la souris
 

@@ -1829,6 +1829,9 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
   // État pour afficher/masquer la grille de collision
   const [showCollisionGrid, setShowCollisionGrid] = useState<boolean>(false);
   
+  // État pour le mode zero gravity
+  const [zeroGravity, setZeroGravity] = useState<boolean>(false);
+  
   // État pour le mode de couleur
   const [colorMode, setColorMode] = useState<'classification' | 'altitude' | 'natural'>('classification');
   
@@ -2170,6 +2173,17 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
       setShowCollisionGrid(ev.value);
     });
     
+    // Ajouter un toggle pour le mode zero gravity
+    const gravityParams = {
+      zeroGravity: zeroGravity
+    };
+    
+    (pane as unknown as { addBinding: (obj: Record<string, boolean>, key: string, options?: Record<string, unknown>) => { on: (event: string, handler: (ev: { value: boolean }) => void) => void } }).addBinding(gravityParams, 'zeroGravity', {
+      label: 'Zero gravity'
+    }).on('change', (ev: { value: boolean }) => {
+      setZeroGravity(ev.value);
+    });
+    
     // Ajouter un séparateur
     (pane as unknown as { addBlade: (config: { view: string }) => void }).addBlade({
       view: 'separator'
@@ -2190,7 +2204,7 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
       options: {
         'Classification': 'classification',
         'Altitude': 'altitude',
-        // 'Naturelle': 'natural'
+        'Naturelle': 'natural'
       }
     }).on('change', (ev: { value: string }) => {
       setColorMode(ev.value as 'classification' | 'altitude' | 'natural');
@@ -2359,7 +2373,7 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
                 console.log("Canvas element:", canvas);
               }}
             >
-              <Physics gravity={[0, 0, -200]}>
+              <Physics gravity={[0, 0, zeroGravity ? 0 : -200]}>
                 <World
                   lazFilePaths={lazFilePaths}
                   pointData={pointData}
