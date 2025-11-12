@@ -1,0 +1,150 @@
+import React from 'react';
+import { useThree } from '@react-three/fiber';
+import { DatGuiPanel } from './DatGuiPanel';
+import { 
+  DynamicNodeLODManager, 
+  DynamicNodeRenderer, 
+  EDLEffect 
+} from './DirectLazViewer';
+import { PointCloudColliders } from './PointCloudColliders';
+import * as THREE from 'three';
+
+interface WorldProps {
+  lazFilePaths: string[];
+  pointData: {
+    positions: Float32Array;
+    colors: Float32Array;
+    intensities: Float32Array;
+    classifications: Uint8Array;
+    bounds: { min: THREE.Vector3; max: THREE.Vector3 };
+    availableClassifications: number[];
+    hasRGBColors: boolean;
+  } | null;
+  metadataLoaded: boolean;
+  nodesToRender: { fileUrl: string; nodeKey: string; level: number; distance: number }[];
+  nodesToRenderKeys: Set<string>;
+  setNodesToRender: (nodes: { fileUrl: string; nodeKey: string; level: number; distance: number }[]) => void;
+  visibleClassifications: Set<number>;
+  colorMode: 'classification' | 'altitude' | 'natural';
+  currentPointSize: number;
+  edlEnabled: boolean;
+  edlStrength: number;
+  edlRadius: number;
+  totalPointsDisplayed: number;
+  setCurrentPointSize: (size: number) => void;
+  setEdlEnabled: (enabled: boolean) => void;
+  setEdlStrength: (strength: number) => void;
+  setEdlRadius: (radius: number) => void;
+  setColorMode: (mode: 'classification' | 'altitude' | 'natural') => void;
+  showCollisionGrid: boolean;
+}
+
+export function World({
+  lazFilePaths,
+  pointData,
+  metadataLoaded,
+  nodesToRender,
+  nodesToRenderKeys,
+  setNodesToRender,
+  visibleClassifications,
+  colorMode,
+  currentPointSize,
+  edlEnabled,
+  edlStrength,
+  edlRadius,
+  totalPointsDisplayed,
+  setCurrentPointSize,
+  setEdlEnabled,
+  setEdlStrength,
+  setEdlRadius,
+  setColorMode,
+  showCollisionGrid,
+}: WorldProps) {
+  const { camera } = useThree();
+
+  // Configurer la caméra pour le mode FPS
+  React.useEffect(() => {
+    camera.position.set(0, 0, 1.75); // Hauteur des yeux
+    camera.rotation.set(0, 0, 0);
+  }, [camera]);
+
+
+  return (
+    <>
+      {/* Lumière directionnelle */}
+      <directionalLight 
+        position={[100, 100, 100]}
+        intensity={1.2}
+        color="#ffffff"
+        castShadow={false}
+      />
+      
+      {/* Lumière ambiante */}
+      <ambientLight intensity={0.3} color="#ffffff" />
+
+      {/* AxesHelper pour visualiser les axes */}
+      <axesHelper args={[10]} />
+
+      {/* Les contrôles de pointeur sont gérés dans le composant Player */}
+
+      {/* Colliders pour les points du nuage - toujours actifs, mais visibilité contrôlable */}
+      {pointData && metadataLoaded && (
+        <PointCloudColliders
+          nodesToRender={nodesToRender}
+          globalBounds={pointData.bounds}
+          pointSize={currentPointSize}
+          visible={showCollisionGrid}
+        />
+      )}
+
+      {/* Gestionnaire de LOD dynamique par node */}
+      {pointData && metadataLoaded && (
+        <DynamicNodeLODManager
+          filePaths={lazFilePaths}
+          globalBounds={pointData.bounds}
+          onNodesUpdate={setNodesToRender}
+        />
+      )}
+
+      {/* Panneau de contrôle */}
+      <DatGuiPanel
+        pointCount={totalPointsDisplayed}
+        pointSize={currentPointSize}
+        onPointSizeChange={setCurrentPointSize}
+        edlEnabled={edlEnabled}
+        onEdlEnabledChange={setEdlEnabled}
+        edlStrength={edlStrength}
+        onEdlStrengthChange={setEdlStrength}
+        edlRadius={edlRadius}
+        onEdlRadiusChange={setEdlRadius}
+        colorMode={colorMode}
+        onColorModeChange={setColorMode}
+        maxLOD={0}
+        onMaxLODChange={() => {}}
+        maxAvailableLevel={0}
+        closed={true}
+      />
+
+      {/* Rendu dynamique des nodes */}
+      {pointData && metadataLoaded && (
+        <DynamicNodeRenderer
+          nodesToRenderKeys={nodesToRenderKeys}
+          allNodes={nodesToRender}
+          globalBounds={pointData.bounds}
+          visibleClassifications={visibleClassifications}
+          colorMode={colorMode}
+          pointSize={currentPointSize}
+        />
+      )}
+
+      {/* Effet EDL */}
+      {edlEnabled && (
+        <EDLEffect 
+          edlStrength={edlStrength} 
+          edlRadius={edlRadius} 
+        />
+      )}
+    </>
+  );
+}
+

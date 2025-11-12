@@ -1,18 +1,16 @@
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { KeyboardControls } from '@react-three/drei';
-import { Physics } from '@react-three/rapier';
+import { CameraControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { Copc } from 'copc';
 import type { Getter } from 'copc';
 import * as LazPerf from 'laz-perf';
 import { Pane } from 'tweakpane';
+import { DatGuiPanel } from './DatGuiPanel';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { resolveDataUrl } from '../utils/dataUrlResolver';
-import { World } from './World';
-import { Player } from './Player';
 
 interface DirectLazViewerProps {
   lazFilePaths: string[]; // Tableau de chemins de fichiers LAZ
@@ -198,7 +196,7 @@ function createBrowserGetter(url: string): Getter {
 let lazPerfInstance: typeof LazPerf | null = null;
 
 // Cache global pour les métadonnées des fichiers COPC
-export const copcMetadataCache = new Map<string, {
+const copcMetadataCache = new Map<string, {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   copc: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -208,7 +206,7 @@ export const copcMetadataCache = new Map<string, {
 }>();
 
 // Cache pour les données chargées des nodes individuels
-export const nodeDataCache = new Map<string, LoadedNodeData>();
+const nodeDataCache = new Map<string, LoadedNodeData>();
 
 // [OBSOLÈTE] Anciens caches pour l'ancien système de chargement
 // Conservés commentés pour référence
@@ -918,7 +916,7 @@ async function loadSingleNode(
 // }
 
 // Composant pour gérer le LOD dynamique par node basé sur la distance de la caméra
-export function DynamicNodeLODManager({
+function DynamicNodeLODManager({
   filePaths,
   globalBounds,
   onNodesUpdate
@@ -1073,7 +1071,7 @@ export function DynamicNodeLODManager({
     // Cela permet d'avoir des LOD jusqu'à 9 pour distance < 0.5x largeur
     
     // Formule adaptative qui supporte jusqu'à 10 niveaux
-    const theoreticalLOD = Math.max(1, Math.floor(5 - distanceInWidths));
+    const theoreticalLOD = Math.max(1, Math.floor(5 - distanceInWidths / 2));
     
     return theoreticalLOD;
   }, []);
@@ -1184,35 +1182,6 @@ export function DynamicNodeLODManager({
     // CORRECTIF 3 : Trier les nodes manquants par distance (les plus proches en premier)
     missingNodes.sort((a, b) => a.distance - b.distance);
     
-    // NOUVEAU : Nettoyer la file d'attente des nodes qui ne sont plus nécessaires
-    // Créer un Set des cacheKeys des nodes actuellement nécessaires
-    const requiredCacheKeys = new Set<string>();
-    for (const node of nodesToRender) {
-      const cacheKey = `${node.fileUrl}_${node.nodeKey}`;
-      requiredCacheKeys.add(cacheKey);
-    }
-    // Ajouter aussi les nodes manquants qui vont être ajoutés
-    for (const node of missingNodes) {
-      requiredCacheKeys.add(node.cacheKey);
-    }
-    
-    // Filtrer la file d'attente pour ne garder que les nodes encore nécessaires
-    const removedFromQueue: string[] = [];
-    loadingQueueRef.current = loadingQueueRef.current.filter(item => {
-      const stillRequired = requiredCacheKeys.has(item.cacheKey);
-      if (!stillRequired) {
-        // Retirer de loadingNodesRef aussi
-        loadingNodesRef.current.delete(item.cacheKey);
-        removedFromQueue.push(item.cacheKey);
-      }
-      return stillRequired;
-    });
-    
-    // Log si des nodes ont été retirés
-    if (removedFromQueue.length > 0 && positionMoved) {
-      console.log(`[LOD] ${removedFromQueue.length} node(s) retiré(s) de la file d'attente (caméra déplacée)`);
-    }
-    
     // CORRECTIF 1 : Ajouter les nodes manquants à la file d'attente
     for (const node of missingNodes) {
       if (!loadingNodesRef.current.has(node.cacheKey)) {
@@ -1221,7 +1190,7 @@ export function DynamicNodeLODManager({
       }
     }
     
-    // CORRECTIF 1 : Traiter la file d'attente (appelé même si la caméra bouge pour nettoyer)
+    // CORRECTIF 1 : Traiter la file d'attente
     processLoadQueue();
     
     // CORRECTIF 2 : Au lieu de mettre à jour immédiatement, utiliser un debounce
@@ -1264,7 +1233,7 @@ export function DynamicNodeLODManager({
 }
 
 // Composant pour l'effet Eye-Dome Lighting
-export function EDLEffect({ 
+function EDLEffect({ 
   edlStrength, 
   edlRadius 
 }: { 
@@ -1477,7 +1446,7 @@ function NodeRenderer({
 }
 
 // Composant pour gérer tous les nodes visibles
-export function DynamicNodeRenderer({
+function DynamicNodeRenderer({
   nodesToRenderKeys,
   allNodes,
   globalBounds,
@@ -1826,9 +1795,6 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
   const [edlRadius, setEdlRadius] = useState<number>(2.5);
   const [edlEnabled, setEdlEnabled] = useState<boolean>(true);
   
-  // État pour afficher/masquer la grille de collision
-  const [showCollisionGrid, setShowCollisionGrid] = useState<boolean>(false);
-  
   // État pour le mode de couleur
   const [colorMode, setColorMode] = useState<'classification' | 'altitude' | 'natural'>('classification');
   
@@ -2159,22 +2125,6 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
       view: 'separator'
     });
     
-    // Ajouter un bouton pour afficher/masquer la grille de collision
-    const gridParams = {
-      showGrid: showCollisionGrid
-    };
-    
-    (pane as unknown as { addBinding: (obj: Record<string, boolean>, key: string, options?: Record<string, unknown>) => { on: (event: string, handler: (ev: { value: boolean }) => void) => void } }).addBinding(gridParams, 'showGrid', {
-      label: 'Afficher grille de collision'
-    }).on('change', (ev: { value: boolean }) => {
-      setShowCollisionGrid(ev.value);
-    });
-    
-    // Ajouter un séparateur
-    (pane as unknown as { addBlade: (config: { view: string }) => void }).addBlade({
-      view: 'separator'
-    });
-    
     // Ajouter un dossier pour le mode de couleur
     const colorFolder = (pane as unknown as { addFolder: (config: { title: string; expanded: boolean }) => unknown }).addFolder({
       title: 'Mode de Couleur',
@@ -2317,85 +2267,121 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
       
       {pointData && (
         <>
-          <KeyboardControls
-            map={[
-              { name: "forward", keys: ["ArrowUp", "z", "Z"] },
-              { name: "backward", keys: ["ArrowDown", "s", "S"] },
-              { name: "left", keys: ["ArrowLeft", "q", "Q"] },
-              { name: "right", keys: ["ArrowRight", "d", "D"] },
-              { name: "jump", keys: ["Space"] },
-            ]}
+          <Canvas 
+            frameloop="always"
+            style={{ background: '#000' }}
+            gl={{ 
+              antialias: true,
+              logarithmicDepthBuffer: true,
+              preserveDrawingBuffer: false
+            }}
+            camera={{ 
+              position: [0, 0, 650], 
+              // Définition de l'axe up de la caméra
+              up: [0, 0, 1],
+              near: 0.01, 
+              far: 10000
+            }}
+            onCreated={({ gl, scene, camera }) => {
+              console.log("Canvas created", gl.domElement);
+              // Activer le nettoyage automatique pour éviter les traces
+              gl.autoClear = true;
+              gl.setClearColor(0x000000, 1);
+              
+              // S'assurer que le domElement est correctement configuré pour les événements de souris
+              const canvas = gl.domElement;
+              canvas.setAttribute("tabindex", "0");
+              canvas.focus();
+              
+              // Journaliser les propriétés importantes pour le débogage
+              console.log("Camera:", camera);
+              console.log("Scene:", scene);
+              console.log("Canvas element:", canvas);
+            }}
           >
-            <Canvas 
-              frameloop="always"
-              style={{ background: '#000' }}
-              gl={{ 
-                antialias: true,
-                logarithmicDepthBuffer: true,
-                preserveDrawingBuffer: false
-              }}
-              camera={{ 
-                position: [0, 0, 1.75], 
-                // Définition de l'axe up de la caméra
-                up: [0, 0, 1],
-                near: 0.01, 
-                far: 10000,
-                fov: 45
-              }}
-              onCreated={({ gl, scene, camera }) => {
-                console.log("Canvas created", gl.domElement);
-                // Activer le nettoyage automatique pour éviter les traces
-                gl.autoClear = true;
-                gl.setClearColor(0x000000, 1);
-                
-                // S'assurer que le domElement est correctement configuré pour les événements de souris
-                const canvas = gl.domElement;
-                canvas.setAttribute("tabindex", "0");
-                canvas.focus();
-                
-                // Journaliser les propriétés importantes pour le débogage
-                console.log("Camera:", camera);
-                console.log("Scene:", scene);
-                console.log("Canvas element:", canvas);
-              }}
-            >
-              <Physics gravity={[0, 0, -200]}>
-                <World
-                  lazFilePaths={lazFilePaths}
-                  pointData={pointData}
-                  metadataLoaded={metadataLoaded}
-                  nodesToRender={nodesToRender}
-                  nodesToRenderKeys={nodesToRenderKeys}
-                  setNodesToRender={setNodesToRender}
-                  visibleClassifications={visibleClassifications}
-                  colorMode={colorMode}
-                  currentPointSize={currentPointSize}
-                  edlEnabled={edlEnabled}
-                  edlStrength={edlStrength}
-                  edlRadius={edlRadius}
-                  totalPointsDisplayed={totalPointsDisplayed}
-                  setCurrentPointSize={setCurrentPointSize}
-                  setEdlEnabled={setEdlEnabled}
-                  setEdlStrength={setEdlStrength}
-                  setEdlRadius={setEdlRadius}
-                  setColorMode={setColorMode}
-                  showCollisionGrid={showCollisionGrid}
-                />
-                <Player 
-                  groundZ={pointData ? (() => {
-                    // Calculer la position Z centrée du sol (haut du sol)
-                    const worldCenter = new THREE.Vector3(
-                      (pointData.bounds.min.x + pointData.bounds.max.x) / 2,
-                      (pointData.bounds.min.y + pointData.bounds.max.y) / 2,
-                      (pointData.bounds.min.z + pointData.bounds.max.z) / 2
-                    );
-                    const minZCentered = pointData.bounds.min.z - worldCenter.z;
-                    return minZCentered;
-                  })() : undefined} 
-                />
-              </Physics>
-            </Canvas>
-          </KeyboardControls>
+          {/* Note: Les lumières n'affectent PAS les nuages de points avec vertexColors.
+              L'Eye-Dome Lighting (EDL) est utilisé pour la perception de profondeur.
+              Cette lumière "Soleil" éclaire uniquement les éléments auxiliaires (axes, grille, etc.). */}
+          
+          {/* Lumière directionnelle "Soleil" - éclairage principal de la scène */}
+          <directionalLight 
+            position={[100, 100, 100]}  // Position du soleil (diagonal haut)
+            intensity={1.2}             // Intensité lumineuse
+            color="#ffffff"             // Lumière blanche naturelle
+            castShadow={false}          // Pas d'ombres (inutile pour nuages de points)
+          />
+          
+          {/* Lumière ambiante minimale pour éviter les zones trop sombres */}
+          <ambientLight intensity={0.3} color="#ffffff" />
+          
+          {/* CameraControls optimisé pour données géospatiales LIDAR */}
+          <CameraControls
+            makeDefault
+            enabled={true}
+            
+            // Avec up=[0,0,1], l'azimuth tourne maintenant autour de Z
+            // Donc pour tourner dans le plan XY, on laisse azimuth libre
+            // et on bloque polar
+            //minPolarAngle={Math.PI / 2}   
+            //maxPolarAngle={Math.PI / 2}   
+            
+            azimuthRotateSpeed={0.5}
+            
+            minDistance={1}
+            maxDistance={10000}
+            dollyToCursor={false}
+            infinityDolly={false}
+            // L'option domElement peut aider à s'assurer que les événements souris sont capturés
+            domElement={document.querySelector('canvas') || undefined}
+          />
+
+          {/* Gestionnaire de LOD dynamique par node */}
+          {pointData && metadataLoaded && (
+            <DynamicNodeLODManager
+              filePaths={lazFilePaths}
+              globalBounds={pointData.bounds}
+              onNodesUpdate={setNodesToRender}
+            />
+          )}
+
+          <DatGuiPanel
+            pointCount={totalPointsDisplayed}
+            pointSize={currentPointSize}
+            onPointSizeChange={setCurrentPointSize}
+            edlEnabled={edlEnabled}
+            onEdlEnabledChange={setEdlEnabled}
+            edlStrength={edlStrength}
+            onEdlStrengthChange={setEdlStrength}
+            edlRadius={edlRadius}
+            onEdlRadiusChange={setEdlRadius}
+            colorMode={colorMode}
+            onColorModeChange={setColorMode}
+            maxLOD={0}
+            onMaxLODChange={() => {}}
+            maxAvailableLevel={0}
+            closed={true}
+          />
+          
+          {/* Axes de référence pour l'orientation */}
+          {/* <axesHelper args={[100]} /> */}
+           {/* Nouveau système : Rendu dynamique des nodes sans fusion */}
+           {pointData && metadataLoaded && (
+             <DynamicNodeRenderer
+               nodesToRenderKeys={nodesToRenderKeys}
+               allNodes={nodesToRender}
+               globalBounds={pointData.bounds}
+               visibleClassifications={visibleClassifications}
+               colorMode={colorMode}
+               pointSize={currentPointSize}
+             />
+           )}
+           {edlEnabled && (
+             <EDLEffect 
+               edlStrength={edlStrength} 
+               edlRadius={edlRadius} 
+             />
+           )}
+         </Canvas>
         </>
       )}
     </div>

@@ -15,6 +15,7 @@
     "@pnext/three-loader": "^1.0.0",
     "@react-three/drei": "^10.0.4",
     "@react-three/fiber": "^9.1.0",
+    "@react-three/rapier": "^2.2.0",
     "@types/three": "^0.174.0",
     "copc": "^0.0.8",
     "dat.gui": "^0.7.9",

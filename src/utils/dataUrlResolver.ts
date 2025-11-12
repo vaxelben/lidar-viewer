@@ -72,11 +72,33 @@ function addCorsProxyIfNeeded(url: string): string {
 }
 
 /**
+ * Détecte si on est en mode développement
+ */
+function isDevelopment(): boolean {
+  return import.meta.env.DEV || import.meta.env.MODE === 'development';
+}
+
+/**
  * Résout l'URL complète d'un fichier de données
  * @param relativePath Chemin relatif du fichier (ex: '/data/metz/file.copc.laz')
  * @returns URL complète du fichier (avec proxy CORS si nécessaire)
  */
 export async function resolveDataUrl(relativePath: string): Promise<string> {
+  // En développement : utiliser les fichiers locaux dans public/data/
+  if (isDevelopment()) {
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    // Si le chemin commence par /, on le garde, sinon on l'ajoute au base path
+    let url: string;
+    if (relativePath.startsWith('/')) {
+      url = `${baseUrl}${relativePath.slice(1)}`.replace(/\/+/g, '/');
+    } else {
+      url = `${baseUrl}${relativePath}`.replace(/\/+/g, '/');
+    }
+    console.log(`[DEV] Utilisation fichier local: ${url}`);
+    return url;
+  }
+  
+  // En production : utiliser Cloudflare R2
   const config = await loadDataConfig();
   
   // Si aucune URL de base n'est configurée, utiliser le chemin relatif avec le base path de Vite
@@ -134,6 +156,21 @@ export async function resolveDataUrl(relativePath: string): Promise<string> {
  * @returns Tableau d'URLs complètes (avec proxy CORS si nécessaire)
  */
 export async function resolveDataUrls(relativePaths: string[]): Promise<string[]> {
+  // En développement : utiliser les fichiers locaux dans public/data/
+  if (isDevelopment()) {
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    return relativePaths.map(path => {
+      let url: string;
+      if (path.startsWith('/')) {
+        url = `${baseUrl}${path.slice(1)}`.replace(/\/+/g, '/');
+      } else {
+        url = `${baseUrl}${path}`.replace(/\/+/g, '/');
+      }
+      return url;
+    });
+  }
+  
+  // En production : utiliser Cloudflare R2
   const config = await loadDataConfig();
   
   if (!config.dataBaseUrl || config.dataBaseUrl.trim() === '') {
