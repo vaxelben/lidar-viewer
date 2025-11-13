@@ -8,6 +8,117 @@ interface BuildingTrianglesDelaunayProps {
   globalBounds: { min: THREE.Vector3; max: THREE.Vector3 };
 }
 
+// Types WebGPU
+interface GPU {
+  requestAdapter(): Promise<GPUAdapter | null>;
+}
+
+interface GPUAdapter {
+  requestDevice(): Promise<GPUDevice>;
+}
+
+interface GPUDevice {
+  createBuffer(descriptor: GPUBufferDescriptor): GPUBuffer;
+  createShaderModule(descriptor: GPUShaderModuleDescriptor): GPUShaderModule;
+  createBindGroupLayout(descriptor: GPUBindGroupLayoutDescriptor): GPUBindGroupLayout;
+  createPipelineLayout(descriptor: GPUPipelineLayoutDescriptor): GPUPipelineLayout;
+  createComputePipeline(descriptor: GPUComputePipelineDescriptor): GPUComputePipeline;
+  createBindGroup(descriptor: GPUBindGroupDescriptor): GPUBindGroup;
+  createCommandEncoder(): GPUCommandEncoder;
+  queue: GPUQueue;
+  destroy(): void;
+}
+
+interface GPUBuffer {
+  getMappedRange(): ArrayBuffer;
+  unmap(): void;
+  mapAsync(mode: number): Promise<void>;
+  destroy(): void;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface GPUShaderModule {}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface GPUBindGroupLayout {}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface GPUPipelineLayout {}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface GPUComputePipeline {}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface GPUBindGroup {}
+interface GPUCommandEncoder {
+  beginComputePass(): GPUComputePassEncoder;
+  copyBufferToBuffer(source: GPUBuffer, sourceOffset: number, destination: GPUBuffer, destinationOffset: number, size: number): void;
+  finish(): GPUCommandBuffer;
+}
+
+interface GPUComputePassEncoder {
+  setPipeline(pipeline: GPUComputePipeline): void;
+  setBindGroup(index: number, bindGroup: GPUBindGroup): void;
+  dispatchWorkgroups(workgroupCount: number): void;
+  end(): void;
+}
+
+interface GPUQueue {
+  submit(commandBuffers: GPUCommandBuffer[]): void;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface GPUCommandBuffer {}
+interface GPUBufferDescriptor {
+  size: number;
+  usage: number;
+  mappedAtCreation?: boolean;
+}
+interface GPUShaderModuleDescriptor {
+  code: string;
+}
+interface GPUBindGroupLayoutDescriptor {
+  entries: Array<{
+    binding: number;
+    visibility: number;
+    buffer: { type: string };
+  }>;
+}
+interface GPUPipelineLayoutDescriptor {
+  bindGroupLayouts: GPUBindGroupLayout[];
+}
+interface GPUComputePipelineDescriptor {
+  layout: GPUPipelineLayout;
+  compute: {
+    module: GPUShaderModule;
+    entryPoint: string;
+  };
+}
+interface GPUBindGroupDescriptor {
+  layout: GPUBindGroupLayout;
+  entries: Array<{
+    binding: number;
+    resource: { buffer: GPUBuffer };
+  }>;
+}
+
+declare global {
+  interface Navigator {
+    gpu?: GPU;
+  }
+  interface Window {
+    GPUBufferUsage?: {
+      STORAGE: number;
+      COPY_DST: number;
+      COPY_SRC: number;
+      UNIFORM: number;
+      MAP_READ: number;
+    };
+    GPUShaderStage?: {
+      COMPUTE: number;
+    };
+    GPUMapMode?: {
+      READ: number;
+    };
+  }
+}
+
 const BUILDING_CLASSIFICATION = 6;
 const PLAYER_RADIUS = 50;
 const MAX_POINTS = 25000;
@@ -354,7 +465,7 @@ export function BuildingTrianglesDelaunay({
   const { camera } = useThree();
   const geometryRef = useRef<THREE.BufferGeometry>(new THREE.BufferGeometry());
   const lastUpdateFrameRef = useRef<number>(0);
-  const webGPUDeviceRef = useRef<any>(null);
+  const webGPUDeviceRef = useRef<GPUDevice | null>(null);
   const webGPUInitializedRef = useRef<boolean>(false);
   const [isProcessing, setIsProcessing] = useState(false);
   
@@ -371,7 +482,7 @@ export function BuildingTrianglesDelaunay({
   useEffect(() => {
     async function initWebGPU() {
       console.log('[DELAUNAY + NEAREST] Initialisation WebGPU...');
-      const gpu = (navigator as any).gpu;
+      const gpu = navigator.gpu;
       if (!gpu) {
         console.warn('[DELAUNAY + NEAREST] WebGPU non disponible, utilisation CPU uniquement');
         webGPUInitializedRef.current = false;
@@ -484,9 +595,14 @@ export function BuildingTrianglesDelaunay({
               pointsData[i * 3 + 2] = buildingPoints[i].z;
             }
             
+            const bufferUsage = window.GPUBufferUsage;
+            if (!bufferUsage) {
+              throw new Error('GPUBufferUsage non disponible');
+            }
+            
             const pointsBuffer = device.createBuffer({
               size: pointsData.byteLength,
-              usage: (window as any).GPUBufferUsage.STORAGE | (window as any).GPUBufferUsage.COPY_DST,
+              usage: bufferUsage.STORAGE | bufferUsage.COPY_DST,
               mappedAtCreation: true,
             });
             new Float32Array(pointsBuffer.getMappedRange()).set(pointsData);
@@ -494,7 +610,7 @@ export function BuildingTrianglesDelaunay({
             
             const connectionsBuffer = device.createBuffer({
               size: pointCount * MAX_VALENCE * 4,
-              usage: (window as any).GPUBufferUsage.STORAGE | (window as any).GPUBufferUsage.COPY_SRC,
+              usage: bufferUsage.STORAGE | bufferUsage.COPY_SRC,
             });
             
             const paramsData = new Uint32Array([pointCount, 0, 0, 0]);
@@ -504,7 +620,7 @@ export function BuildingTrianglesDelaunay({
             
             const paramsBuffer = device.createBuffer({
               size: 16,
-              usage: (window as any).GPUBufferUsage.UNIFORM | (window as any).GPUBufferUsage.COPY_DST,
+              usage: bufferUsage.UNIFORM | bufferUsage.COPY_DST,
               mappedAtCreation: true,
             });
             new Uint32Array(paramsBuffer.getMappedRange()).set(paramsData);
@@ -514,11 +630,16 @@ export function BuildingTrianglesDelaunay({
               code: computeShaderCode,
             });
             
+            const shaderStage = window.GPUShaderStage;
+            if (!shaderStage) {
+              throw new Error('GPUShaderStage non disponible');
+            }
+            
             const bindGroupLayout = device.createBindGroupLayout({
               entries: [
-                { binding: 0, visibility: (window as any).GPUShaderStage.COMPUTE, buffer: { type: 'read-only-storage' } },
-                { binding: 1, visibility: (window as any).GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
-                { binding: 2, visibility: (window as any).GPUShaderStage.COMPUTE, buffer: { type: 'uniform' } },
+                { binding: 0, visibility: shaderStage.COMPUTE, buffer: { type: 'read-only-storage' } },
+                { binding: 1, visibility: shaderStage.COMPUTE, buffer: { type: 'storage' } },
+                { binding: 2, visibility: shaderStage.COMPUTE, buffer: { type: 'uniform' } },
               ],
             });
             
@@ -552,9 +673,14 @@ export function BuildingTrianglesDelaunay({
             passEncoder.dispatchWorkgroups(workgroupCount);
             passEncoder.end();
             
+            const mapMode = window.GPUMapMode;
+            if (!mapMode) {
+              throw new Error('GPUMapMode non disponible');
+            }
+            
             const readbackBuffer = device.createBuffer({
               size: pointCount * MAX_VALENCE * 4,
-              usage: (window as any).GPUBufferUsage.COPY_DST | (window as any).GPUBufferUsage.MAP_READ,
+              usage: bufferUsage.COPY_DST | bufferUsage.MAP_READ,
             });
             
             commandEncoder.copyBufferToBuffer(
@@ -567,7 +693,7 @@ export function BuildingTrianglesDelaunay({
             
             device.queue.submit([commandEncoder.finish()]);
             
-            await readbackBuffer.mapAsync((window as any).GPUMapMode.READ);
+            await readbackBuffer.mapAsync(mapMode.READ);
             const connectionsData = new Uint32Array(readbackBuffer.getMappedRange());
             
             // Construire les Sets de voisins
@@ -594,7 +720,7 @@ export function BuildingTrianglesDelaunay({
         }
         
         // ===== ÉTAPE 2 : Faire la triangulation de Delaunay =====
-        const { points2D, basis } = projectToPlane(buildingPoints);
+        const { points2D } = projectToPlane(buildingPoints);
         const triangleIndices = delaunay2D(points2D);
         
         // ===== ÉTAPE 3 : Filtrer les triangles par distance et qualité =====
