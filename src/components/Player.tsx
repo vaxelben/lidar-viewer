@@ -4,9 +4,10 @@ import { useKeyboardControls } from '@react-three/drei';
 import { RigidBody, CapsuleCollider, RapierRigidBody, useRapier } from '@react-three/rapier';
 import * as THREE from 'three';
 
-const SPEED = 50;
+const SPEED = 150;
 const JUMP_FORCE = 50;
 const PLAYER_HEIGHT = 20;
+const START_HEIGHT_ABOVE_GROUND = 400; // Distance supplémentaire au-dessus du sol pour le spawn
 const RAYCAST_DISTANCE = 0.2; // Distance pour détecter le sol
 const MOUSE_SENSITIVITY = 0.002; // Sensibilité de la souris
 
@@ -33,10 +34,10 @@ export function Player({ groundZ }: PlayerProps = {}) {
   // Le CapsuleCollider est centré sur le RigidBody (position [0, 0, 0])
   // Le bas de la capsule est à startPosition.z - PLAYER_HEIGHT/2
   const startPosition = React.useMemo(() => {
-    // Positionner le joueur à Z = 10
-    // Le centre du RigidBody sera à Z = 10
-    // Le bas de la capsule sera à 10 - PLAYER_HEIGHT/2
-    const pos = new THREE.Vector3(0, 0, 10);
+    const groundOffset = groundZ ?? 0;
+    // Positionner le centre du joueur suffisamment haut au-dessus du sol détecté
+    const centerZ = groundOffset + PLAYER_HEIGHT / 2 + START_HEIGHT_ABOVE_GROUND;
+    const pos = new THREE.Vector3(0, 0, centerZ);
     console.log('[PLAYER] Position initiale:', {
       rigidBodyZ: pos.z,
       capsuleBottom: pos.z - PLAYER_HEIGHT / 2,
@@ -46,8 +47,8 @@ export function Player({ groundZ }: PlayerProps = {}) {
   }, [groundZ]);
 
   useEffect(() => {
-    // Positionner la caméra au niveau des yeux du joueur (Z = 10 + PLAYER_HEIGHT)
-    camera.position.set(0, 0, 10 + PLAYER_HEIGHT);
+    // Positionner la caméra au niveau des yeux du joueur
+    camera.position.set(0, 0, startPosition.z + PLAYER_HEIGHT);
     
     // Configurer la caméra pour Z-up
     camera.up.set(0, 0, 1);
@@ -90,7 +91,7 @@ export function Player({ groundZ }: PlayerProps = {}) {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('click', handleClick);
     };
-  }, [camera]);
+  }, [camera, startPosition.z]);
 
   useFrame((state) => {
     if (!rigidBodyRef.current) return;
@@ -110,25 +111,28 @@ export function Player({ groundZ }: PlayerProps = {}) {
     state.camera.rotation.copy(eulerRef.current);
 
     // Calculer la direction du mouvement basée sur les touches et l'orientation de la caméra
-    // Dans notre système Z-up, on utilise la direction de la caméra pour le mouvement
+    // Dans notre système Z-up, on utilise la direction complète de la caméra pour le mouvement 3D
     
-    // Obtenir la direction avant de la caméra (où elle regarde)
+    // Obtenir la direction avant de la caméra (où elle regarde) - direction complète 3D
     const cameraDirection = new THREE.Vector3();
     state.camera.getWorldDirection(cameraDirection);
     
-    // Pour un système Z-up, on projette la direction de la caméra sur le plan XY
-    // et on normalise pour avoir un vecteur horizontal
-    const forwardDirection = new THREE.Vector3(cameraDirection.x, cameraDirection.y, 0).normalize();
+    // Utiliser la direction complète de la caméra (incluant Z) pour le mouvement 3D
+    const forwardDirection = cameraDirection.clone().normalize();
     
-    // Calculer la direction droite (perpendiculaire à forward dans le plan XY)
-    // Dans un système Z-up, la droite est obtenue en faisant le produit vectoriel avec l'axe Z
+    // Calculer la direction droite (perpendiculaire à forward)
+    // Dans un système Z-up, utiliser le produit vectoriel avec l'axe up de la caméra
     const rightDirection = new THREE.Vector3();
-    rightDirection.crossVectors(forwardDirection, new THREE.Vector3(0, 0, 1)).normalize();
+    rightDirection.crossVectors(forwardDirection, state.camera.up).normalize();
+    
+    // Calculer la direction vers le haut (perpendiculaire à forward et right)
+    const upDirection = new THREE.Vector3();
+    upDirection.crossVectors(rightDirection, forwardDirection).normalize();
     
     // Calculer le vecteur de mouvement final
     const movement = new THREE.Vector3(0, 0, 0);
     
-    // Avant/arrière : mouvement dans la direction de la caméra (projetée sur XY)
+    // Avant/arrière : mouvement dans la direction complète de la caméra (3D)
     if (forward) {
       movement.add(forwardDirection);
     }
@@ -150,9 +154,10 @@ export function Player({ groundZ }: PlayerProps = {}) {
       direction = movement.normalize().multiplyScalar(SPEED);
     }
 
-    // Appliquer la vélocité : garder Z (vertical) et remplacer X et Y
+    // Appliquer la vélocité : mouvement complet 3D (X, Y, Z)
+    // En mode zeroGravity, on permet le mouvement libre dans toutes les directions
     rigidBodyRef.current.setLinvel(
-      { x: direction.x, y: direction.y, z: velocity.z },
+      { x: direction.x, y: direction.y, z: direction.z },
       true
     );
 

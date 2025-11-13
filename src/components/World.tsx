@@ -7,7 +7,7 @@ import {
   EDLEffect 
 } from './DirectLazViewer';
 import { PointCloudColliders } from './PointCloudColliders';
-import { BuildingLinesWebGPU } from './BuildingLinesWebGPU';
+// import { BuildingLinesWebGPU } from './BuildingLinesWebGPU';
 // import { BuildingTrianglesWebGPU } from './BuildingTrianglesWebGPU';
 // import { BuildingTrianglesDelaunay } from './BuildingTrianglesDelaunay';
 import * as THREE from 'three';
@@ -141,12 +141,12 @@ export function World({
       )}
 
       {/* Lignes entre les points de bâtiments proches (WebGPU) */}
-      {pointData && metadataLoaded && (
+      {/* {pointData && metadataLoaded && (
         <BuildingLinesWebGPU
           nodesToRender={nodesToRender}
           globalBounds={pointData.bounds}
         />
-      )}
+      )} */}
 
       {/* Triangles entre les points de bâtiments proches (WebGPU) */}
       {/* {pointData && metadataLoaded && (

@@ -47,8 +47,8 @@ const EDLShader = {
     tDiffuse: { value: null },
     tDepth: { value: null },
     resolution: { value: new THREE.Vector2() },
-    edlStrength: { value: 1.5 },
-    radius: { value: 2.5 }
+    edlStrength: { value: 5.0 },
+    radius: { value: 0.5 }
   },
   vertexShader: `
     varying vec2 vUv;
@@ -819,6 +819,17 @@ async function loadSingleNode(
     const intensities = new Float32Array(pointCount);
     const classifications = new Uint8Array(pointCount);
     
+    // Log des dimensions disponibles (seulement pour le premier node chargé)
+    const windowWithFlags = window as Window & { __dimensionsLogged?: Set<string> };
+    if (!windowWithFlags.__dimensionsLogged) {
+      windowWithFlags.__dimensionsLogged = new Set();
+    }
+    const fileKey = `${relativePath}`;
+    if (!windowWithFlags.__dimensionsLogged.has(fileKey)) {
+      console.log(`[COLORS] Dimensions disponibles dans ${relativePath}:`, Object.keys(view.dimensions));
+      windowWithFlags.__dimensionsLogged.add(fileKey);
+    }
+    
     const getX = view.getter('X');
     const getY = view.getter('Y');
     const getZ = view.getter('Z');
@@ -828,6 +839,42 @@ async function loadSingleNode(
     const getGreen = view.dimensions['Green'] ? view.getter('Green') : null;
     const getBlue = view.dimensions['Blue'] ? view.getter('Blue') : null;
     
+    // Avertir si les couleurs RGB ne sont pas disponibles
+    if (!getRed || !getGreen || !getBlue) {
+      if (!windowWithFlags.__dimensionsLogged.has(`${fileKey}_rgb_warning`)) {
+        console.warn(`[COLORS] ⚠️ Les couleurs RGB ne sont pas disponibles dans ${relativePath}`);
+        console.warn(`   Red: ${getRed ? '✓' : '✗'}, Green: ${getGreen ? '✓' : '✗'}, Blue: ${getBlue ? '✓' : '✗'}`);
+        console.warn(`   Le mode "Naturelle" affichera du noir. Utilisez "Classification" ou "Altitude" à la place.`);
+        windowWithFlags.__dimensionsLogged.add(`${fileKey}_rgb_warning`);
+      }
+    }
+    
+    // Détecter automatiquement si les couleurs sont sur 8 bits (0-255) ou 16 bits (0-65535)
+    // En échantillonnant les premiers points pour voir si les valeurs dépassent 255
+    let is8BitColor = false;
+    if (getRed && getGreen && getBlue && pointCount > 0) {
+      let maxColorValue = 0;
+      const sampleSize = Math.min(100, pointCount);
+      for (let i = 0; i < sampleSize; i++) {
+        const r = getRed(i);
+        const g = getGreen(i);
+        const b = getBlue(i);
+        maxColorValue = Math.max(maxColorValue, r, g, b);
+      }
+      // Si aucune valeur ne dépasse 255, c'est probablement du 8 bits
+      is8BitColor = maxColorValue <= 255;
+      
+      if (!windowWithFlags.__dimensionsLogged.has(`${fileKey}_color_bit_depth`)) {
+        console.log(`[COLORS] Détection profondeur couleur: ${is8BitColor ? '8 bits (0-255)' : '16 bits (0-65535)'} (max échantillon: ${maxColorValue})`);
+        windowWithFlags.__dimensionsLogged.add(`${fileKey}_color_bit_depth`);
+      }
+    }
+    
+    // Statistiques pour vérifier si les couleurs sont valides
+    let hasValidColors = false;
+    let colorSampleCount = 0;
+    const colorDivisor = is8BitColor ? 255.0 : 65535.0;
+    
     for (let i = 0; i < pointCount; i++) {
       positions[i * 3] = getX(i);
       positions[i * 3 + 1] = getY(i);
@@ -836,9 +883,27 @@ async function loadSingleNode(
       classifications[i] = getClassification ? getClassification(i) : 0;
       intensities[i] = getIntensity ? getIntensity(i) / 65535.0 : 0;
       
-      colors[i * 3] = getRed ? getRed(i) / 65535.0 : 0;
-      colors[i * 3 + 1] = getGreen ? getGreen(i) / 65535.0 : 0;
-      colors[i * 3 + 2] = getBlue ? getBlue(i) / 65535.0 : 0;
+      // Extraire les couleurs RGB (normalisées entre 0 et 1)
+      // Détection automatique 8 bits vs 16 bits
+      const r = getRed ? getRed(i) / colorDivisor : 0;
+      const g = getGreen ? getGreen(i) / colorDivisor : 0;
+      const b = getBlue ? getBlue(i) / colorDivisor : 0;
+      
+      colors[i * 3] = r;
+      colors[i * 3 + 1] = g;
+      colors[i * 3 + 2] = b;
+      
+      // Vérifier si au moins une couleur est non-nulle (échantillonnage sur les 100 premiers points)
+      if (i < 100 && (r > 0 || g > 0 || b > 0)) {
+        hasValidColors = true;
+        colorSampleCount++;
+      }
+    }
+    
+    // Log si les couleurs semblent valides (seulement une fois par fichier)
+    if (hasValidColors && !windowWithFlags.__dimensionsLogged.has(`${fileKey}_rgb_valid`)) {
+      console.log(`[COLORS] ✓ Couleurs RGB détectées dans ${relativePath} (échantillon: ${colorSampleCount}/100 points avec couleurs non-nulles)`);
+      windowWithFlags.__dimensionsLogged.add(`${fileKey}_rgb_valid`);
     }
     
     const nodeData = { positions, colors, intensities, classifications };
@@ -990,60 +1055,63 @@ export function DynamicNodeLODManager({
     return size.length();
   }, [globalBounds]);
   
+  // OPTIMISATION : Pré-calculer globalCenter une seule fois
+  const globalCenter = useMemo(() => new THREE.Vector3(
+    (globalBounds.min.x + globalBounds.max.x) / 2,
+    (globalBounds.min.y + globalBounds.max.y) / 2,
+    (globalBounds.min.z + globalBounds.max.z) / 2
+  ), [globalBounds]);
+  
+  // OPTIMISATION : Réutiliser les objets temporaires pour éviter les allocations
+  const tempVectors = useRef({
+    nodeCenter: new THREE.Vector3(),
+    centeredNodePos: new THREE.Vector3(),
+    nodeSize: new THREE.Vector3(),
+    nodeMin: new THREE.Vector3(),
+    nodeMax: new THREE.Vector3()
+  });
+  const tempBox = useRef(new THREE.Box3());
+  
   // Fonction pour calculer la distance de la caméra à un node et sa largeur
   const getDistanceAndWidth = useCallback((nodeBounds: { min: THREE.Vector3; max: THREE.Vector3 }): { distance: number; nodeWidth: number } => {
-    // Centre du node (en coordonnées non centrées)
-    const nodeCenter = new THREE.Vector3(
+    // Centre du node (en coordonnées non centrées) - réutiliser l'objet
+    tempVectors.current.nodeCenter.set(
       (nodeBounds.min.x + nodeBounds.max.x) / 2,
       (nodeBounds.min.y + nodeBounds.max.y) / 2,
       (nodeBounds.min.z + nodeBounds.max.z) / 2
     );
     
-    // Centre du nuage global
-    const globalCenter = new THREE.Vector3(
-      (globalBounds.min.x + globalBounds.max.x) / 2,
-      (globalBounds.min.y + globalBounds.max.y) / 2,
-      (globalBounds.min.z + globalBounds.max.z) / 2
-    );
+    // Position du node centré - réutiliser l'objet
+    tempVectors.current.centeredNodePos.copy(tempVectors.current.nodeCenter).sub(globalCenter);
+    const distance = camera.position.distanceTo(tempVectors.current.centeredNodePos);
     
-    // Position du node centré
-    const centeredNodePos = nodeCenter.clone().sub(globalCenter);
-    const distance = camera.position.distanceTo(centeredNodePos);
-    
-    // Calculer la largeur du node (diagonale de la bounding box)
-    const nodeSize = new THREE.Vector3(
+    // Calculer la largeur du node (diagonale de la bounding box) - réutiliser l'objet
+    tempVectors.current.nodeSize.set(
       nodeBounds.max.x - nodeBounds.min.x,
       nodeBounds.max.y - nodeBounds.min.y,
       nodeBounds.max.z - nodeBounds.min.z
     );
-    const nodeWidth = nodeSize.length(); // Diagonale = taille du node
+    const nodeWidth = tempVectors.current.nodeSize.length(); // Diagonale = taille du node
     
     return { distance, nodeWidth };
-  }, [camera.position, globalBounds]);
+  }, [camera.position, globalCenter]);
   
   // Fonction pour vérifier si un node est dans le frustum de la caméra
-  // Le frustum est passé en paramètre pour éviter de le recréer à chaque appel
+  // OPTIMISATION : Réutiliser les objets temporaires
   const isNodeInFrustum = useCallback((
     nodeBounds: { min: THREE.Vector3; max: THREE.Vector3 },
     frustum: THREE.Frustum
   ): boolean => {
-    // Centre du nuage global
-    const globalCenter = new THREE.Vector3(
-      (globalBounds.min.x + globalBounds.max.x) / 2,
-      (globalBounds.min.y + globalBounds.max.y) / 2,
-      (globalBounds.min.z + globalBounds.max.z) / 2
-    );
+    // Convertir les bounds du node en coordonnées centrées - réutiliser les objets
+    tempVectors.current.nodeMin.copy(nodeBounds.min).sub(globalCenter);
+    tempVectors.current.nodeMax.copy(nodeBounds.max).sub(globalCenter);
     
-    // Convertir les bounds du node en coordonnées centrées
-    const nodeMin = nodeBounds.min.clone().sub(globalCenter);
-    const nodeMax = nodeBounds.max.clone().sub(globalCenter);
-    
-    // Créer une bounding box pour le node
-    const box = new THREE.Box3(nodeMin, nodeMax);
+    // Réutiliser la bounding box
+    tempBox.current.setFromPoints([tempVectors.current.nodeMin, tempVectors.current.nodeMax]);
     
     // Vérifier si la bounding box intersecte le frustum
-    return frustum.intersectsBox(box);
-  }, [globalBounds]);
+    return frustum.intersectsBox(tempBox.current);
+  }, [globalCenter]);
   
   // Fonction pour calculer le niveau de LOD approprié pour un node
   // Basé sur la largeur du node : distance < 1 largeur = LOD max, < 2 largeurs = LOD-1, etc.
@@ -1073,7 +1141,7 @@ export function DynamicNodeLODManager({
     // Cela permet d'avoir des LOD jusqu'à 9 pour distance < 0.5x largeur
     
     // Formule adaptative qui supporte jusqu'à 10 niveaux
-    const theoreticalLOD = Math.max(1, Math.floor(5 - distanceInWidths));
+    const theoreticalLOD = Math.max(1, Math.floor(6 - distanceInWidths));
     
     return theoreticalLOD;
   }, []);
@@ -1132,35 +1200,41 @@ export function DynamicNodeLODManager({
       // Parcourir tous les nodes et afficher ceux dont le niveau est <= LOD requis
       // Affichage cumulatif : si LOD requis = 3, afficher niveaux 1, 2 et 3
       for (const node of metadata.nodes.values()) {
-        const { distance, nodeWidth } = getDistanceAndWidth(node.bounds);
-        
-        // FRUSTUM CULLING : Vérifier si le node est visible dans le frustum
+        // OPTIMISATION : Early exit - vérifier le frustum AVANT de calculer la distance
+        // Cela évite des calculs coûteux pour les nodes non visibles
         const isVisible = isNodeInFrustum(node.bounds, frustum);
         
         if (!isVisible) {
           culledNodesCount++;
-        } else {
-          visibleNodesCount++;
+          // Si le node n'est pas visible, forcer le LOD à 1 et continuer
+          // (on pourrait même skip complètement, mais on garde pour les stats)
+          const requiredLOD = 1;
+          if (node.level <= requiredLOD && node.level >= 1) {
+            nodesToRender.push({
+              fileUrl,
+              nodeKey: node.key,
+              level: node.level,
+              distance: Infinity // Distance non calculée pour les nodes non visibles
+            });
+          }
+          continue;
         }
         
-        let requiredLOD: number;
-        if (!isVisible) {
-          // Si le node n'est pas visible, forcer le LOD à 1
-          requiredLOD = 1;
-        } else {
-          // Si le node est visible, calculer le LOD normalement
-          requiredLOD = getLODForDistance(distance, nodeWidth);
-        }
+        visibleNodesCount++;
+        
+        // Calculer la distance seulement si le node est visible
+        const { distance, nodeWidth } = getDistanceAndWidth(node.bounds);
+        const requiredLOD = getLODForDistance(distance, nodeWidth);
         
         // Limiter le LOD requis au niveau maximum disponible
-        requiredLOD = Math.min(requiredLOD, maxAvailableLevel);
+        const finalLOD = Math.min(requiredLOD, maxAvailableLevel);
         
         // Afficher ce node si son niveau est <= LOD requis (affichage cumulatif)
         // LOD requis = 1 → afficher niveau 1
         // LOD requis = 2 → afficher niveaux 1 et 2
         // LOD requis = 3 → afficher niveaux 1, 2 et 3
         // LOD requis = N → afficher niveaux 1, 2, 3, ..., N
-        if (node.level <= requiredLOD && node.level >= 1) {
+        if (node.level <= finalLOD && node.level >= 1) {
           nodesToRender.push({
             fileUrl,
             nodeKey: node.key,
@@ -1348,6 +1422,62 @@ export function EDLEffect({
   return null;
 }
 
+// Fonction pour créer une texture de point personnalisée
+function createPointTexture(shape: 'circle' | 'square' | 'star' | 'cross' = 'circle', size: number = 64): THREE.Texture {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  
+  // Fond transparent
+  ctx.clearRect(0, 0, size, size);
+  
+  const center = size / 2;
+  const radius = size / 2 - 2;
+  
+  if (shape === 'circle') {
+    // Cercle uniforme (aplat de couleur, sans dégradé ni ombrage)
+    ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+    ctx.beginPath();
+    ctx.arc(center, center, radius, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.fill();
+  } else if (shape === 'square') {
+    // Carré avec bords arrondis
+    ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+    ctx.fillRect(2, 2, size - 4, size - 4);
+  } else if (shape === 'star') {
+    // Étoile à 5 branches
+    ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+    ctx.beginPath();
+    for (let i = 0; i < 5; i++) {
+      const angle = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+      const x = center + radius * Math.cos(angle);
+      const y = center + radius * Math.sin(angle);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+  } else if (shape === 'cross') {
+    // Croix
+    ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+    const barWidth = size / 4;
+    const barLength = size;
+    // Barre horizontale
+    ctx.fillRect(0, center - barWidth / 2, barLength, barWidth);
+    // Barre verticale
+    ctx.fillRect(center - barWidth / 2, 0, barWidth, barLength);
+  }
+  
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  return texture;
+}
+
+// Cache pour les textures de points (éviter de les recréer à chaque fois)
+const pointTextureCache = new Map<string, THREE.Texture>();
+
 // Composant pour rendre un node individuel sans fusion
 function NodeRenderer({
   fileUrl,
@@ -1368,6 +1498,11 @@ function NodeRenderer({
   const materialRef = useRef<THREE.PointsMaterial | null>(null);
   const meshRef = useRef<THREE.Points | null>(null);
   
+  // Type de forme des points (peut être rendu configurable plus tard)
+  // null = rendu par défaut (plus performant, carrés natifs)
+  // 'circle' | 'square' | 'star' | 'cross' = texture personnalisée (moins performant mais forme personnalisée)
+  const pointShape: 'circle' | 'square' | 'star' | 'cross' | null = null; // null pour performance maximale
+  
   // Charger les données du node
   const cacheKey = `${fileUrl}_${nodeKey}`;
   const nodeData = nodeDataCache.get(cacheKey);
@@ -1386,39 +1521,83 @@ function NodeRenderer({
     const { positions, colors, classifications } = nodeData;
     const pointCount = positions.length / 3;
     
-    // Filtrer et centrer les positions, appliquer le mode de couleur
-    const filteredPositions: number[] = [];
-    const filteredColors: number[] = [];
+    // OPTIMISATION : Compter d'abord les points visibles pour pré-allouer les arrays
+    let visibleCount = 0;
+    for (let i = 0; i < pointCount; i++) {
+      if (visibleClassifications.has(classifications[i])) {
+        visibleCount++;
+      }
+    }
     
+    if (visibleCount === 0) {
+      // Pas de points visibles, cacher la géométrie
+      if (meshRef.current) meshRef.current.visible = false;
+      return;
+    }
+    
+    // OPTIMISATION : Pré-allouer les TypedArrays au lieu d'utiliser push()
+    const filteredPositions = new Float32Array(visibleCount * 3);
+    const filteredColors = new Float32Array(visibleCount * 3);
+    
+    const windowWithFlags = window as Window & { __colorSampleLogged?: boolean; __colorAttributeLogged?: boolean };
+    
+    // Constantes pour les calculs de couleur (éviter de les recalculer à chaque itération)
+    const brightness = 1.3;
+    const saturation = 1.2;
+    const minZ = globalBounds.min.z;
+    const maxZ = globalBounds.max.z;
+    
+    let filteredIndex = 0;
     for (let i = 0; i < pointCount; i++) {
       if (!visibleClassifications.has(classifications[i])) continue;
       
+      const posIdx = i * 3;
+      const filteredPosIdx = filteredIndex * 3;
+      
       // Positions centrées
-      filteredPositions.push(
-        positions[i * 3] - globalCenter.x,
-        positions[i * 3 + 1] - globalCenter.y,
-        positions[i * 3 + 2] - globalCenter.z
-      );
+      filteredPositions[filteredPosIdx] = positions[posIdx] - globalCenter.x;
+      filteredPositions[filteredPosIdx + 1] = positions[posIdx + 1] - globalCenter.y;
+      filteredPositions[filteredPosIdx + 2] = positions[posIdx + 2] - globalCenter.z;
       
       // Couleurs selon le mode
       let r: number, g: number, b: number;
       if (colorMode === 'natural') {
-        r = colors[i * 3];
-        g = colors[i * 3 + 1];
-        b = colors[i * 3 + 2];
+        r = colors[posIdx];
+        g = colors[posIdx + 1];
+        b = colors[posIdx + 2];
+        
+        // Améliorer la saturation et la luminosité pour des couleurs plus vives
+        // OPTIMISATION : Calculs simplifiés
+        r = Math.min(1.0, r * brightness);
+        g = Math.min(1.0, g * brightness);
+        b = Math.min(1.0, b * brightness);
+        
+        // Augmenter la saturation
+        const avg = (r + g + b) * 0.333333333; // 1/3 optimisé
+        const rDiff = r - avg;
+        const gDiff = g - avg;
+        const bDiff = b - avg;
+        r = Math.min(1.0, Math.max(0.0, avg + rDiff * saturation));
+        g = Math.min(1.0, Math.max(0.0, avg + gDiff * saturation));
+        b = Math.min(1.0, Math.max(0.0, avg + bDiff * saturation));
       } else if (colorMode === 'altitude') {
-        const altitude = positions[i * 3 + 2];
-        [r, g, b] = getColorForAltitude(altitude, globalBounds.min.z, globalBounds.max.z);
+        const altitude = positions[posIdx + 2];
+        [r, g, b] = getColorForAltitude(altitude, minZ, maxZ);
       } else {
         [r, g, b] = getColorForClassification(classifications[i]);
       }
-      filteredColors.push(r, g, b);
-    }
-    
-    if (filteredPositions.length === 0) {
-      // Pas de points visibles, cacher la géométrie
-      if (meshRef.current) meshRef.current.visible = false;
-      return;
+      
+      filteredColors[filteredPosIdx] = r;
+      filteredColors[filteredPosIdx + 1] = g;
+      filteredColors[filteredPosIdx + 2] = b;
+      
+      // Log des premières couleurs pour debug (seulement pour le premier node et mode natural)
+      if (filteredIndex < 5 && colorMode === 'natural' && !windowWithFlags.__colorSampleLogged) {
+        console.log(`[COLORS] Échantillon de couleurs (point ${filteredIndex}): R=${r.toFixed(3)}, G=${g.toFixed(3)}, B=${b.toFixed(3)}`);
+        if (filteredIndex === 4) windowWithFlags.__colorSampleLogged = true;
+      }
+      
+      filteredIndex++;
     }
     
     // Créer ou mettre à jour la géométrie
@@ -1427,8 +1606,9 @@ function NodeRenderer({
     }
     
     const geo = geometryRef.current;
-    const posArray = new Float32Array(filteredPositions);
-    const colArray = new Float32Array(filteredColors);
+    // OPTIMISATION : filteredPositions et filteredColors sont déjà des Float32Array (pré-alloués)
+    const posArray = filteredPositions;
+    const colArray = filteredColors;
     
     // Réutiliser ou créer les buffers
     const posAttr = geo.getAttribute('position');
@@ -1447,29 +1627,73 @@ function NodeRenderer({
       geo.setAttribute('color', new THREE.BufferAttribute(colArray, 3));
     }
     
+    // Log pour vérifier que les couleurs sont bien appliquées
+    const windowWithFlagsForLog = window as Window & { __colorAttributeLogged?: boolean };
+    if (colorMode === 'natural' && !windowWithFlagsForLog.__colorAttributeLogged) {
+      const sampleColor = colArray.length >= 3 ? [colArray[0], colArray[1], colArray[2]] : [0, 0, 0];
+      console.log(`[COLORS] Attribut couleur appliqué (${colArray.length / 3} points, échantillon: R=${sampleColor[0].toFixed(3)}, G=${sampleColor[1].toFixed(3)}, B=${sampleColor[2].toFixed(3)})`);
+      windowWithFlagsForLog.__colorAttributeLogged = true;
+    }
+    
     if (meshRef.current) meshRef.current.visible = true;
   }, [nodeData, visibleClassifications, colorMode, globalCenter, globalBounds]);
   
   // Créer le matériau
   useEffect(() => {
     if (!materialRef.current) {
-      materialRef.current = new THREE.PointsMaterial({
+      const materialConfig: THREE.PointsMaterialParameters = {
         size: pointSize,
+        color: 0xffffff, // Couleur de base blanche nécessaire pour vertexColors
         vertexColors: true,
         sizeAttenuation: true,
         transparent: true,
-        opacity: 0.5,
+        opacity: 1.0, // Opacité maximale pour des couleurs plus vives
         depthWrite: true,
         depthTest: true,
-        alphaTest: 0.5,
         blending: THREE.NormalBlending,
         toneMapped: false
-      });
+      };
+      
+      // Si une forme personnalisée est demandée, utiliser une texture
+      // Sinon, utiliser le rendu par défaut (plus performant)
+      if (pointShape) {
+        // Obtenir ou créer la texture pour la forme de point
+        const textureKey = `${pointShape}_64`;
+        let pointTexture = pointTextureCache.get(textureKey);
+        if (!pointTexture) {
+          pointTexture = createPointTexture(pointShape, 64);
+          pointTextureCache.set(textureKey, pointTexture);
+        }
+        materialConfig.map = pointTexture;
+        materialConfig.alphaTest = 0.1; // Test alpha pour la transparence de la texture
+      } else {
+        // Rendu par défaut sans texture (plus performant)
+        materialConfig.alphaTest = 0.0;
+      }
+      
+      materialRef.current = new THREE.PointsMaterial(materialConfig);
     } else {
       materialRef.current.size = pointSize;
+      
+      // Mettre à jour la texture si nécessaire
+      if (pointShape) {
+        const textureKey = `${pointShape}_64`;
+        let pointTexture = pointTextureCache.get(textureKey);
+        if (!pointTexture) {
+          pointTexture = createPointTexture(pointShape, 64);
+          pointTextureCache.set(textureKey, pointTexture);
+        }
+        materialRef.current.map = pointTexture;
+        materialRef.current.alphaTest = 0.1;
+      } else {
+        // Retirer la texture pour revenir au rendu par défaut
+        materialRef.current.map = null;
+        materialRef.current.alphaTest = 0.0;
+      }
+      
       materialRef.current.needsUpdate = true;
     }
-  }, [pointSize]);
+  }, [pointSize, pointShape]);
   
   if (!nodeData || !geometryRef.current || !materialRef.current) return null;
   
@@ -1803,7 +2027,7 @@ function PointCloudRenderer({
 // Composant principal du visualiseur
 const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
   lazFilePaths,
-  pointSize = 0.5
+  pointSize = 0.8
 }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [progress, setProgress] = useState<number>(0);
@@ -1822,18 +2046,18 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
   const [visibleClassifications, setVisibleClassifications] = useState<Set<number>>(new Set());
   
   // États pour les paramètres EDL
-  const [edlStrength, setEdlStrength] = useState<number>(1.5);
-  const [edlRadius, setEdlRadius] = useState<number>(2.5);
+  const [edlStrength, setEdlStrength] = useState<number>(5.0);
+  const [edlRadius, setEdlRadius] = useState<number>(0.5);
   const [edlEnabled, setEdlEnabled] = useState<boolean>(true);
   
   // État pour afficher/masquer la grille de collision
   const [showCollisionGrid, setShowCollisionGrid] = useState<boolean>(false);
   
   // État pour le mode zero gravity
-  const [zeroGravity, setZeroGravity] = useState<boolean>(false);
+  const [zeroGravity, setZeroGravity] = useState<boolean>(true);
   
   // État pour le mode de couleur
-  const [colorMode, setColorMode] = useState<'classification' | 'altitude' | 'natural'>('classification');
+  const [colorMode, setColorMode] = useState<'classification' | 'altitude' | 'natural'>('natural');
   
   // Seuils de distance pour le LOD dynamique (multiples de la taille du nuage)
   // [très proche, proche, moyen, loin]
@@ -2142,7 +2366,7 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
     (edlFolder as unknown as { addBinding: (obj: Record<string, boolean | number>, key: string, options?: Record<string, unknown>) => { on: (event: string, handler: (ev: { value: boolean | number }) => void) => void } }).addBinding(edlParams, 'strength', {
       label: 'Intensité',
       min: 0.1,
-      max: 5.0,
+      max: 15.0,
       step: 0.1
     }).on('change', (ev: { value: boolean | number }) => {
       setEdlStrength(ev.value as number);
@@ -2150,8 +2374,8 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
     
     (edlFolder as unknown as { addBinding: (obj: Record<string, boolean | number>, key: string, options?: Record<string, unknown>) => { on: (event: string, handler: (ev: { value: boolean | number }) => void) => void } }).addBinding(edlParams, 'radius', {
       label: 'Rayon',
-      min: 0.5,
-      max: 5.0,
+      min: 0.1,
+      max: 15.0,
       step: 0.1
     }).on('change', (ev: { value: boolean | number }) => {
       setEdlRadius(ev.value as number);
