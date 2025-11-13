@@ -572,9 +572,9 @@ export function BuildingLinesWebGPU({
   return (
     <lineSegments geometry={geometryRef.current}>
       <lineBasicMaterial 
-        color={0xffffff}
+        color={0xff0000}
         transparent={true}
-        opacity={0.6}
+        opacity={1.0}
         depthTest={true}
         depthWrite={true}
       />
