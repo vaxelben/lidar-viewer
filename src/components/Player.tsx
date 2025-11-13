@@ -6,7 +6,7 @@ import * as THREE from 'three';
 
 const SPEED = 50;
 const JUMP_FORCE = 50;
-const PLAYER_HEIGHT = 50;
+const PLAYER_HEIGHT = 20;
 const RAYCAST_DISTANCE = 0.2; // Distance pour détecter le sol
 const MOUSE_SENSITIVITY = 0.002; // Sensibilité de la souris
 
