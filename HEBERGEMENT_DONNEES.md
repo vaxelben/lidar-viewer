@@ -165,12 +165,33 @@ data/
   strasbourg/
     LHD_FXX_1047_6842_PTS_LAMB93_IGN69.copc.laz
     ...
+models/
+  buildings_LHD_FXX_0932_6896_PTS_LAMB93_IGN69.obj
+  (autres modèles 3D si nécessaire)
 ```
 
 L'application construira automatiquement les URLs :
 ```
 {dataBaseUrl}/data/metz/LHD_FXX_0927_6895_PTS_LAMB93_IGN69.copc.laz
+{dataBaseUrl}/models/buildings_LHD_FXX_0932_6896_PTS_LAMB93_IGN69.obj
 ```
+
+### 🏗️ Fichiers des Bâtiments (Models OBJ)
+
+Les modèles 3D des bâtiments sont également chargés dynamiquement :
+
+- **En développement** : Depuis `/public/models/`
+- **En production (GitHub Pages)** : Depuis le bucket R2 ou GitHub Releases
+
+**Pour uploader sur Cloudflare R2 :**
+```bash
+npx wrangler r2 object put lidar-data/buildings_LHD_FXX_0932_6896_PTS_LAMB93_IGN69.obj \
+  --file=public/models/buildings_LHD_FXX_0932_6896_PTS_LAMB93_IGN69.obj
+```
+
+**Pour uploader sur GitHub Releases :**
+- Incluez le fichier OBJ dans les assets de la release avec les fichiers LAZ
+- Le système détectera automatiquement et utilisera uniquement le nom du fichier
 
 ---
 

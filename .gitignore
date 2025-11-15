@@ -17,6 +17,8 @@ R2_SECURITY.md
 upload-to-r2.ps1
 
 public/data
+public/models
+scripts
 
 .wrangler/
 

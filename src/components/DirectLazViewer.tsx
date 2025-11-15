@@ -1141,7 +1141,7 @@ export function DynamicNodeLODManager({
     // Cela permet d'avoir des LOD jusqu'à 9 pour distance < 0.5x largeur
     
     // Formule adaptative qui supporte jusqu'à 10 niveaux
-    const theoreticalLOD = Math.max(1, Math.floor(6 - distanceInWidths));
+    const theoreticalLOD = Math.max(1, Math.floor(10 - distanceInWidths));
     
     return theoreticalLOD;
   }, []);
@@ -2562,6 +2562,7 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
               { name: "left", keys: ["ArrowLeft", "q", "Q"] },
               { name: "right", keys: ["ArrowRight", "d", "D"] },
               { name: "jump", keys: ["Space"] },
+              { name: "buildings", keys: ["b", "B"] },
             ]}
           >
             <Canvas 
@@ -2576,7 +2577,9 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
                 position: [0, 0, 1.75], 
                 // Définition de l'axe up de la caméra
                 up: [0, 0, 1],
-                near: 0.01, 
+                // Amélioration du ratio near/far pour réduire le z-fighting
+                // Ratio de 0.1:10000 = 100,000:1 au lieu de 1,000,000:1
+                near: 0.1, 
                 far: 10000,
                 fov: 45
               }}

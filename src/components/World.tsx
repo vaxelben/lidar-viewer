@@ -1,12 +1,14 @@
 import React from 'react';
 import { useThree } from '@react-three/fiber';
+import { useKeyboardControls } from '@react-three/drei';
 import { DatGuiPanel } from './DatGuiPanel';
 import { 
   DynamicNodeLODManager, 
   DynamicNodeRenderer, 
   EDLEffect 
 } from './DirectLazViewer';
-import { PointCloudColliders } from './PointCloudColliders';
+// import { PointCloudColliders } from './PointCloudColliders';
+import { Buildings } from './Buildings';
 // import { BuildingLinesWebGPU } from './BuildingLinesWebGPU';
 // import { BuildingTrianglesWebGPU } from './BuildingTrianglesWebGPU';
 // import { BuildingTrianglesDelaunay } from './BuildingTrianglesDelaunay';
@@ -64,12 +66,34 @@ export function World({
   showCollisionGrid,
 }: WorldProps) {
   const { camera } = useThree();
+  const [, get] = useKeyboardControls();
+  
+  // État pour la visibilité des bâtiments
+  const [buildingsVisible, setBuildingsVisible] = React.useState(true);
 
   // Configurer la caméra pour le mode FPS
   React.useEffect(() => {
     camera.position.set(0, 0, 1.75); // Hauteur des yeux
     camera.rotation.set(0, 0, 0);
   }, [camera]);
+
+  // Gérer le raccourci clavier pour afficher/masquer les bâtiments
+  const prevBuildingsPressed = React.useRef(false);
+  
+  React.useEffect(() => {
+    const handleKeyCheck = () => {
+      const buildingsPressed = get().buildings;
+      // Détecter le front montant (passage de false à true)
+      if (buildingsPressed && !prevBuildingsPressed.current) {
+        setBuildingsVisible(prev => !prev);
+      }
+      prevBuildingsPressed.current = buildingsPressed;
+    };
+
+    const interval = setInterval(handleKeyCheck, 50); // Vérifier toutes les 50ms
+    
+    return () => clearInterval(interval);
+  }, [get]);
 
 
   return (
@@ -88,17 +112,20 @@ export function World({
       {/* AxesHelper pour visualiser les axes */}
       <axesHelper args={[10]} />
 
+      {/* Modèle 3D des bâtiments */}
+      <Buildings visible={buildingsVisible} />
+
       {/* Les contrôles de pointeur sont gérés dans le composant Player */}
 
       {/* Colliders pour les points du nuage - toujours actifs, mais visibilité contrôlable */}
-      {pointData && metadataLoaded && (
+      {/* {pointData && metadataLoaded && (
         <PointCloudColliders
           nodesToRender={nodesToRender}
           globalBounds={pointData.bounds}
           pointSize={currentPointSize}
           visible={showCollisionGrid}
         />
-      )}
+      )} */}
 
       {/* Gestionnaire de LOD dynamique par node */}
       {pointData && metadataLoaded && (
