@@ -41,7 +41,7 @@ interface WorldProps {
   setEdlStrength: (strength: number) => void;
   setEdlRadius: (radius: number) => void;
   setColorMode: (mode: 'classification' | 'altitude' | 'natural') => void;
-  showCollisionGrid: boolean;
+  // showCollisionGrid: boolean;
 }
 
 export function World({
@@ -63,7 +63,7 @@ export function World({
   setEdlStrength,
   setEdlRadius,
   setColorMode,
-  showCollisionGrid,
+  // showCollisionGrid,
 }: WorldProps) {
   const { camera } = useThree();
   const [, get] = useKeyboardControls();
