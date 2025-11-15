@@ -21,15 +21,6 @@ export function Player({ groundZ }: PlayerProps = {}) {
   const [, get] = useKeyboardControls();
   const { rapier, world } = useRapier();
   
-  // États pour la rotation de la caméra
-  // Dans un système où le plan horizontal est XY et Z est vertical :
-  // - rotationZ = rotation dans le plan XY (azimuth) - regarder à gauche/droite
-  // - rotationX = inclinaison haut/bas (pitch) - regarder vers le haut/bas
-  // Par défaut, la caméra regarde vers l'horizon (pitch = 0) dans le plan XY
-  // Pour regarder vers l'axe Y positif (devant), on tourne de -Math.PI/2 autour de Z
-  const eulerRef = useRef(new THREE.Euler(Math.PI / 2, 0, Math.PI / 2, 'ZXY')); // Ordre ZXY : d'abord Z (azimuth), puis X (pitch)
-  const isPointerLockedRef = useRef(false);
-
   // Position initiale du joueur à Z = 10
   // Le CapsuleCollider est centré sur le RigidBody (position [0, 0, 0])
   // Le bas de la capsule est à startPosition.z - PLAYER_HEIGHT/2
@@ -46,12 +37,63 @@ export function Player({ groundZ }: PlayerProps = {}) {
     return pos;
   }, [groundZ]);
 
+  // États pour la rotation de la caméra
+  // Dans un système où le plan horizontal est XY et Z est vertical :
+  // - rotationZ = rotation dans le plan XY (azimuth) - regarder à gauche/droite
+  // - rotationX = inclinaison haut/bas (pitch) - regarder vers le haut/bas
+  // Calculer l'angle initial pour regarder vers l'origine (où se trouvent les bâtiments)
+  const initialRotation = React.useMemo(() => {
+    // Cible : centre de la scène / origine (0, 0, 0)
+    const target = new THREE.Vector3(0, 0, 0);
+    
+    // Position de la caméra (yeux du joueur)
+    const cameraPosition = new THREE.Vector3(
+      startPosition.x,
+      startPosition.y,
+      startPosition.z + PLAYER_HEIGHT
+    );
+    
+    // Vecteur de direction vers la cible
+    const direction = new THREE.Vector3().subVectors(target, cameraPosition).normalize();
+    
+    // Calculer l'azimuth (rotation Z) : angle dans le plan XY
+    // atan2(y, x) donne l'angle dans le plan XY
+    const azimuth = Math.atan2(direction.y, direction.x);
+    
+    // Calculer le pitch (rotation X) : inclinaison verticale
+    // Pour un système Z-up, le pitch est l'angle entre la direction et le plan XY
+    const horizontalDistance = Math.sqrt(direction.x * direction.x + direction.y * direction.y);
+    const pitch = Math.atan2(-direction.z, horizontalDistance); // Négatif car Z pointe vers le haut
+    
+    // Correction pour le système d'axes utilisé
+    // L'Euler est en ordre ZXY, donc on ajuste les angles
+    const correctedAzimuth = azimuth - Math.PI / 2; // Ajustement pour que +Y soit "devant"
+    const correctedPitch = Math.PI / 2 - pitch; // Conversion vers le système de coordonnées de la caméra
+    
+    console.log('[PLAYER] Rotation initiale vers l\'origine:', {
+      target: target.toArray(),
+      cameraPosition: cameraPosition.toArray(),
+      direction: direction.toArray(),
+      azimuthDeg: (correctedAzimuth * 180 / Math.PI).toFixed(1),
+      pitchDeg: (correctedPitch * 180 / Math.PI).toFixed(1)
+    });
+    
+    return new THREE.Euler(correctedPitch, 0, correctedAzimuth, 'ZXY');
+  }, [startPosition]);
+
+  const eulerRef = useRef(initialRotation);
+  const isPointerLockedRef = useRef(false);
+
   useEffect(() => {
     // Positionner la caméra au niveau des yeux du joueur
     camera.position.set(0, 0, startPosition.z + PLAYER_HEIGHT);
     
     // Configurer la caméra pour Z-up
     camera.up.set(0, 0, 1);
+    
+    // Appliquer la rotation initiale pour regarder vers l'origine
+    camera.rotation.copy(initialRotation);
+    eulerRef.current.copy(initialRotation);
     
     // Gérer le verrouillage du pointeur
     const handlePointerLockChange = () => {
@@ -91,7 +133,7 @@ export function Player({ groundZ }: PlayerProps = {}) {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('click', handleClick);
     };
-  }, [camera, startPosition.z]);
+  }, [camera, startPosition.z, initialRotation]);
 
   useFrame((state) => {
     if (!rigidBodyRef.current) return;
