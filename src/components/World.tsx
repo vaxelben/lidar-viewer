@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { useThree } from '@react-three/fiber';
-import { useKeyboardControls } from '@react-three/drei';
+import { useKeyboardControls, Html } from '@react-three/drei';
 import { DatGuiPanel } from './DatGuiPanel';
 import { 
   DynamicNodeLODManager, 
@@ -9,6 +9,7 @@ import {
 } from './DirectLazViewer';
 // import { PointCloudColliders } from './PointCloudColliders';
 import { Buildings } from './Buildings';
+import { ErrorBoundary } from './ErrorBoundary';
 // import { BuildingLinesWebGPU } from './BuildingLinesWebGPU';
 // import { BuildingTrianglesWebGPU } from './BuildingTrianglesWebGPU';
 // import { BuildingTrianglesDelaunay } from './BuildingTrianglesDelaunay';
@@ -112,8 +113,44 @@ export function World({
       {/* AxesHelper pour visualiser les axes */}
       <axesHelper args={[10]} />
 
-      {/* Modèle 3D des bâtiments */}
-      <Buildings visible={buildingsVisible} />
+      {/* Modèle 3D des bâtiments avec chargement progressif */}
+      <ErrorBoundary>
+        <Suspense
+          fallback={
+            <Html center>
+              <div style={{
+                background: 'rgba(0, 0, 0, 0.8)',
+                color: 'white',
+                padding: '20px 40px',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontFamily: 'monospace',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '15px'
+              }}>
+                <div className="spinner" style={{
+                  border: '3px solid rgba(255, 255, 255, 0.3)',
+                  borderTop: '3px solid white',
+                  borderRadius: '50%',
+                  width: '24px',
+                  height: '24px',
+                  animation: 'spin 1s linear infinite'
+                }}></div>
+                <span>Chargement des bâtiments 3D (99 MB)...</span>
+              </div>
+              <style>{`
+                @keyframes spin {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+              `}</style>
+            </Html>
+          }
+        >
+          <Buildings visible={buildingsVisible} />
+        </Suspense>
+      </ErrorBoundary>
 
       {/* Les contrôles de pointeur sont gérés dans le composant Player */}
 
