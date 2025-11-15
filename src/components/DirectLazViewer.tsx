@@ -2051,7 +2051,7 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
   const [edlEnabled, setEdlEnabled] = useState<boolean>(true);
   
   // État pour afficher/masquer la grille de collision
-  const [showCollisionGrid, setShowCollisionGrid] = useState<boolean>(false);
+  // const [showCollisionGrid, setShowCollisionGrid] = useState<boolean>(false);
   
   // État pour le mode zero gravity
   const [zeroGravity, setZeroGravity] = useState<boolean>(true);
@@ -2387,15 +2387,15 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
     });
     
     // Ajouter un bouton pour afficher/masquer la grille de collision
-    const gridParams = {
-      showGrid: showCollisionGrid
-    };
+    // const gridParams = {
+    //   showGrid: showCollisionGrid
+    // };
     
-    (pane as unknown as { addBinding: (obj: Record<string, boolean>, key: string, options?: Record<string, unknown>) => { on: (event: string, handler: (ev: { value: boolean }) => void) => void } }).addBinding(gridParams, 'showGrid', {
-      label: 'Afficher grille de collision'
-    }).on('change', (ev: { value: boolean }) => {
-      setShowCollisionGrid(ev.value);
-    });
+    // (pane as unknown as { addBinding: (obj: Record<string, boolean>, key: string, options?: Record<string, unknown>) => { on: (event: string, handler: (ev: { value: boolean }) => void) => void } }).addBinding(gridParams, 'showGrid', {
+    //   label: 'Afficher grille de collision'
+    // }).on('change', (ev: { value: boolean }) => {
+    //   setShowCollisionGrid(ev.value);
+    // });
     
     // Ajouter un toggle pour le mode zero gravity
     const gravityParams = {
@@ -2620,7 +2620,7 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
                   setEdlStrength={setEdlStrength}
                   setEdlRadius={setEdlRadius}
                   setColorMode={setColorMode}
-                  showCollisionGrid={showCollisionGrid}
+                  // showCollisionGrid={showCollisionGrid}
                 />
                 <Player 
                   groundZ={pointData ? (() => {
