@@ -193,14 +193,34 @@ function BuildingsLoader({
         }
         
         // CORRECTION DU Z-FIGHTING : Configurer le matériau
+        // ET appliquer la couleur personnalisée #fcf9e6
+        const customColor = new THREE.Color('#fcf9e6');
+        const newMaterial = new THREE.MeshStandardMaterial({
+          color: customColor,
+          polygonOffset: true,
+          polygonOffsetFactor: 1,
+          polygonOffsetUnits: 1,
+          side: THREE.FrontSide,
+          // Ajouter le flatShading pour un rendu plus propre
+          flatShading: true,
+          // Ajouter le depthTest et depthWrite pour éviter les conflits de depth
+          depthTest: true,
+          depthWrite: true,
+          // Ajouter le transparent et l'opacity pour la transparence
+          transparent: true,
+          opacity: 1.0,
+          // Ajouter le blending pour le rendu par-dessus
+          blending: THREE.NormalBlending,
+        });
+        
+        // Disposer l'ancien matériau pour libérer la mémoire
         if (child.material) {
-          const material = Array.isArray(child.material) ? child.material[0] : child.material;
-          if (material) {
-            material.polygonOffset = true;
-            material.polygonOffsetFactor = 1;
-            material.polygonOffsetUnits = 1;
-          }
+          const oldMaterial = Array.isArray(child.material) ? child.material : [child.material];
+          oldMaterial.forEach((mat) => mat.dispose());
         }
+        
+        // Appliquer le nouveau matériau
+        child.material = newMaterial;
       }
     });
     
