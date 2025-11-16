@@ -4,11 +4,11 @@ import { useKeyboardControls } from '@react-three/drei';
 import { RigidBody, CapsuleCollider, RapierRigidBody, useRapier } from '@react-three/rapier';
 import * as THREE from 'three';
 
-const SPEED = 150;
+const SPEED = 50;
 const JUMP_FORCE = 50;
-const PLAYER_HEIGHT = 20;
-const START_HEIGHT_ABOVE_GROUND = 400; // Distance supplémentaire au-dessus du sol pour le spawn
-const RAYCAST_DISTANCE = 0.2; // Distance pour détecter le sol
+const PLAYER_HEIGHT = 1;
+const START_HEIGHT_ABOVE_GROUND = 200; // Distance supplémentaire au-dessus du sol pour le spawn
+const RAYCAST_DISTANCE = 0.05; // Distance pour détecter le sol
 const MOUSE_SENSITIVITY = 0.002; // Sensibilité de la souris
 
 interface PlayerProps {

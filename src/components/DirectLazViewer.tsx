@@ -2042,6 +2042,29 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
     hasRGBColors: boolean;
   } | null>(null);
   
+  // États pour suivre le chargement séparé des nuages de points et des bâtiments
+  const [pointCloudProgress, setPointCloudProgress] = useState<number>(0);
+  const [buildingsProgress, setBuildingsProgress] = useState<number>(0);
+  
+  // Calculer la progression globale (70% pour les nuages de points, 30% pour les bâtiments)
+  useEffect(() => {
+    const globalProgress = pointCloudProgress * 0.7 + buildingsProgress * 0.3;
+    setProgress(globalProgress);
+  }, [pointCloudProgress, buildingsProgress]);
+  
+  // Masquer le preloader uniquement quand tout est chargé (nuages de points + bâtiments)
+  useEffect(() => {
+    // Le preloader se masque quand :
+    // 1. Les nuages de points sont chargés (pointCloudProgress === 1.0)
+    // 2. Les bâtiments sont chargés (buildingsProgress === 1.0)
+    if (pointCloudProgress === 1.0 && buildingsProgress === 1.0) {
+      console.log('[READY] Tout est chargé, masquage du preloader');
+      setTimeout(() => {
+        setLoading(false);
+      }, 500);
+    }
+  }, [pointCloudProgress, buildingsProgress]);
+  
   // État pour gérer les classifications visibles
   const [visibleClassifications, setVisibleClassifications] = useState<Set<number>>(new Set());
   
@@ -2054,7 +2077,7 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
   // const [showCollisionGrid, setShowCollisionGrid] = useState<boolean>(false);
   
   // État pour le mode zero gravity
-  const [zeroGravity, setZeroGravity] = useState<boolean>(true);
+  const [zeroGravity, setZeroGravity] = useState<boolean>(false);
   
   // État pour le mode de couleur
   const [colorMode, setColorMode] = useState<'classification' | 'altitude' | 'natural'>('natural');
@@ -2071,6 +2094,9 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
   // Nouveaux états pour le système de LOD dynamique par node
   const [nodesToRender, setNodesToRender] = useState<{ fileUrl: string; nodeKey: string; level: number; distance: number }[]>([]);
   const [metadataLoaded, setMetadataLoaded] = useState<boolean>(false);
+  
+  // État pour afficher/masquer l'overlay d'instructions
+  const [showInstructions, setShowInstructions] = useState<boolean>(true);
 
   // Synchroniser currentPointSize avec la prop pointSize si elle change
   useEffect(() => {
@@ -2108,7 +2134,7 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
         for (let i = 0; i < lazFilePaths.length; i++) {
           const filePath = lazFilePaths[i];
           try {
-            setProgress((i / lazFilePaths.length) * 0.3); // 0-30% pour les métadonnées
+            setPointCloudProgress((i / lazFilePaths.length) * 0.3); // 0-30% pour les métadonnées
             const metadata = await loadCOPCMetadata(filePath);
             metadataResults.push({ filePath, metadata });
           } catch (error) {
@@ -2141,11 +2167,11 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
           globalMax.max(metadata.bounds.max);
         }
         
-        setProgress(0.3); // 30% - métadonnées chargées
+        setPointCloudProgress(0.3); // 30% - métadonnées chargées
         console.log(`[OK] Métadonnées chargées. Bounds globaux:`, { min: globalMin, max: globalMax });
         
         // Étape 2 : Charger uniquement le niveau 1 de tous les fichiers qui ont réussi
-        setProgress(0.35); // 35%
+        setPointCloudProgress(0.35); // 35%
         console.log(`[LOAD] Chargement du niveau 1 de ${successfulFilePaths.length} fichier(s)...`);
         
         // Charger les nodes de manière séquentielle par fichier pour éviter de surcharger le serveur
@@ -2187,7 +2213,7 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
             
             // Mise à jour de la progression (35% à 90% pour le chargement des nodes)
             const nodeProgress = 0.35 + (loadedNodes / totalNodes) * 0.55;
-            setProgress(nodeProgress);
+            setPointCloudProgress(nodeProgress);
             
             // Petit délai entre les batches pour éviter de surcharger le serveur
             if (i + batchSize < level1Nodes.length) {
@@ -2198,7 +2224,7 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
         
         if (!isMounted) return;
         
-        setProgress(0.9); // 90%
+        setPointCloudProgress(0.9); // 90%
         console.log(`[OK] Niveau 1 chargé pour tous les fichiers`);
         
         // Initialiser l'affichage avec le niveau 1
@@ -2246,13 +2272,11 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
         setVisibleClassifications(new Set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]));
         setMetadataLoaded(true);
         
-        setProgress(1.0); // 100%
+        setPointCloudProgress(1.0); // 100%
         console.log(`[READY] Affichage initial prêt avec ${initialNodesToRender.length} nodes de niveau 1`);
         
-        // Masquer le preloader après un court délai
-        setTimeout(() => {
-          setLoading(false);
-        }, 500);
+        // Note : Le preloader sera masqué quand les bâtiments seront aussi chargés
+        // voir l'effet useEffect séparé qui gère buildingsLoading
         
       } catch (err) {
         if (isMounted) {
@@ -2485,6 +2509,21 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pointData]);
   
+  // Callbacks pour le chargement des bâtiments
+  const handleBuildingsLoadStart = useCallback(() => {
+    console.log('[Buildings] Début du chargement des bâtiments');
+    setBuildingsProgress(0);
+  }, []);
+  
+  const handleBuildingsLoadProgress = useCallback((progress: number) => {
+    setBuildingsProgress(progress);
+  }, []);
+  
+  const handleBuildingsLoadComplete = useCallback(() => {
+    console.log('[Buildings] Chargement des bâtiments terminé');
+    setBuildingsProgress(1.0);
+  }, []);
+  
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       {loading && (
@@ -2553,6 +2592,165 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
         </div>
       )}
       
+      {/* Overlay d'instructions - affiché une fois le chargement terminé */}
+      {!loading && showInstructions && pointData && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'rgba(0, 0, 0, 0.6)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 999,
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          backdropFilter: 'blur(2px)'
+        }}>
+          <div style={{
+            background: 'rgba(20, 20, 20, 0.95)',
+            padding: '30px 40px',
+            borderRadius: '12px',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+            maxWidth: '400px',
+            color: 'white'
+          }}>
+            <h3 style={{
+              margin: '0 0 20px 0',
+              fontSize: '18px',
+              fontWeight: '500',
+              color: '#ffffff',
+              textAlign: 'center'
+            }}>
+              Contrôles
+            </h3>
+            
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+              marginBottom: '24px'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  minWidth: '80px',
+                  textAlign: 'center',
+                  border: '1px solid rgba(255, 255, 255, 0.2)'
+                }}>
+                  Z Q S D
+                </div>
+                <span style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.9)' }}>
+                  Déplacement
+                </span>
+              </div>
+              
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  minWidth: '80px',
+                  textAlign: 'center',
+                  border: '1px solid rgba(255, 255, 255, 0.2)'
+                }}>
+                  Souris
+                </div>
+                <span style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.9)' }}>
+                  Direction caméra
+                </span>
+              </div>
+              
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  minWidth: '80px',
+                  textAlign: 'center',
+                  border: '1px solid rgba(255, 255, 255, 0.2)'
+                }}>
+                  Espace
+                </div>
+                <span style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.9)' }}>
+                  Sauter
+                </span>
+              </div>
+              
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  minWidth: '80px',
+                  textAlign: 'center',
+                  border: '1px solid rgba(255, 255, 255, 0.2)'
+                }}>
+                  B
+                </div>
+                <span style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.9)' }}>
+                  Afficher/Masquer bâtiments
+                </span>
+              </div>
+            </div>
+            
+            <button
+              onClick={() => setShowInstructions(false)}
+              style={{
+                width: '100%',
+                padding: '12px',
+                background: 'rgba(255, 255, 255, 0.15)',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                borderRadius: '8px',
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              Commencer
+            </button>
+          </div>
+        </div>
+      )}
+      
       {pointData && (
         <>
           <KeyboardControls
@@ -2571,7 +2769,7 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
               gl={{ 
                 antialias: true,
                 logarithmicDepthBuffer: true,
-                preserveDrawingBuffer: false
+                preserveDrawingBuffer: true
               }}
               camera={{ 
                 position: [0, 0, 1.75], 
@@ -2620,6 +2818,9 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
                   setEdlStrength={setEdlStrength}
                   setEdlRadius={setEdlRadius}
                   setColorMode={setColorMode}
+                  onBuildingsLoadStart={handleBuildingsLoadStart}
+                  onBuildingsLoadProgress={handleBuildingsLoadProgress}
+                  onBuildingsLoadComplete={handleBuildingsLoadComplete}
                   // showCollisionGrid={showCollisionGrid}
                 />
                 <Player 

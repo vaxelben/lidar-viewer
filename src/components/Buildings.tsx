@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useLoader } from '@react-three/fiber';
 import { OBJLoader } from 'three-stdlib';
 import { RigidBody, TrimeshCollider } from '@react-three/rapier';
 import * as THREE from 'three';
@@ -11,6 +10,59 @@ interface BuildingsProps {
   showEdges?: boolean;
   edgeColor?: string;
   edgeThickness?: number;
+  onLoadStart?: () => void;
+  onLoadProgress?: (progress: number) => void;
+  onLoadComplete?: () => void;
+}
+
+// Cache global pour le modèle OBJ chargé
+const modelCache = new Map<string, THREE.Group>();
+const loadingPromises = new Map<string, Promise<THREE.Group>>();
+
+// Fonction pour charger le modèle OBJ manuellement
+async function loadOBJModel(url: string, onProgress?: (progress: number) => void): Promise<THREE.Group> {
+  // Vérifier le cache
+  if (modelCache.has(url)) {
+    console.log('[Buildings] Modèle récupéré du cache:', url);
+    return modelCache.get(url)!;
+  }
+  
+  // Vérifier si un chargement est déjà en cours
+  if (loadingPromises.has(url)) {
+    console.log('[Buildings] Attente du chargement en cours:', url);
+    return loadingPromises.get(url)!;
+  }
+  
+  // Créer une nouvelle promesse de chargement
+  const loadingPromise = new Promise<THREE.Group>((resolve, reject) => {
+    const loader = new OBJLoader();
+    
+    console.log('[Buildings] Début du chargement du modèle OBJ:', url);
+    
+    loader.load(
+      url,
+      (object) => {
+        console.log('[Buildings] Modèle OBJ chargé avec succès');
+        modelCache.set(url, object);
+        loadingPromises.delete(url);
+        resolve(object);
+      },
+      (progressEvent) => {
+        if (progressEvent.lengthComputable && onProgress) {
+          const progress = progressEvent.loaded / progressEvent.total;
+          onProgress(progress);
+        }
+      },
+      (error) => {
+        console.error('[Buildings] Erreur lors du chargement du modèle OBJ:', error);
+        loadingPromises.delete(url);
+        reject(error);
+      }
+    );
+  });
+  
+  loadingPromises.set(url, loadingPromise);
+  return loadingPromise;
 }
 
 // Composant interne qui charge le modèle une fois l'URL résolue
@@ -19,19 +71,53 @@ function BuildingsLoader({
   visible,
   showEdges,
   edgeColor,
-  edgeThickness 
+  edgeThickness,
+  onLoadStart,
+  onLoadProgress,
+  onLoadComplete
 }: { 
   objUrl: string;
   visible: boolean;
   showEdges: boolean;
   edgeColor: string;
   edgeThickness: number;
+  onLoadStart?: () => void;
+  onLoadProgress?: (progress: number) => void;
+  onLoadComplete?: () => void;
 }) {
-  // Charger le fichier OBJ
-  const obj = useLoader(OBJLoader, objUrl);
+  // État pour stocker le modèle chargé
+  const [obj, setObj] = useState<THREE.Group | null>(null);
+  
+  // Charger le modèle OBJ au montage du composant
+  useEffect(() => {
+    let isMounted = true;
+    
+    if (onLoadStart) {
+      onLoadStart();
+    }
+    
+    loadOBJModel(objUrl, onLoadProgress)
+      .then((loadedObj) => {
+        if (isMounted) {
+          setObj(loadedObj);
+          if (onLoadComplete) {
+            onLoadComplete();
+          }
+        }
+      })
+      .catch((error) => {
+        console.error('[Buildings] Erreur lors du chargement:', error);
+      });
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [objUrl, onLoadStart, onLoadProgress, onLoadComplete]);
 
   // Cloner l'objet pour éviter les problèmes de réutilisation
   const clonedScene = React.useMemo(() => {
+    if (!obj) return null;
+    
     const cloned = obj.clone();
     
     // Calculer la bounding box AVANT toute modification
@@ -300,7 +386,8 @@ function BuildingsLoader({
     }
   }, [clonedScene]);
 
-  if (!visible) {
+  // Ne rien afficher si le modèle n'est pas chargé ou si pas visible
+  if (!visible || !clonedScene) {
     return null;
   }
 
@@ -328,7 +415,10 @@ export function Buildings({
   visible = true, 
   showEdges = true,
   edgeColor = '#000000',
-  edgeThickness = 1
+  edgeThickness = 1,
+  onLoadStart,
+  onLoadProgress,
+  onLoadComplete
 }: BuildingsProps) {
   // Résoudre l'URL du fichier OBJ (local en dev, R2 en prod)
   const [objUrl, setObjUrl] = useState<string | null>(null);
@@ -358,6 +448,9 @@ export function Buildings({
       showEdges={showEdges}
       edgeColor={edgeColor}
       edgeThickness={edgeThickness}
+      onLoadStart={onLoadStart}
+      onLoadProgress={onLoadProgress}
+      onLoadComplete={onLoadComplete}
     />
   );
 }

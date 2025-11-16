@@ -1,6 +1,6 @@
-import React, { Suspense } from 'react';
+import React from 'react';
 import { useThree } from '@react-three/fiber';
-import { useKeyboardControls, Html } from '@react-three/drei';
+import { useKeyboardControls } from '@react-three/drei';
 import { DatGuiPanel } from './DatGuiPanel';
 import { 
   DynamicNodeLODManager, 
@@ -42,6 +42,9 @@ interface WorldProps {
   setEdlStrength: (strength: number) => void;
   setEdlRadius: (radius: number) => void;
   setColorMode: (mode: 'classification' | 'altitude' | 'natural') => void;
+  onBuildingsLoadStart: () => void;
+  onBuildingsLoadProgress: (progress: number) => void;
+  onBuildingsLoadComplete: () => void;
   // showCollisionGrid: boolean;
 }
 
@@ -64,6 +67,9 @@ export function World({
   setEdlStrength,
   setEdlRadius,
   setColorMode,
+  onBuildingsLoadStart,
+  onBuildingsLoadProgress,
+  onBuildingsLoadComplete,
   // showCollisionGrid,
 }: WorldProps) {
   const { camera } = useThree();
@@ -115,41 +121,12 @@ export function World({
 
       {/* Modèle 3D des bâtiments avec chargement progressif */}
       <ErrorBoundary>
-        <Suspense
-          fallback={
-            <Html center>
-              <div style={{
-                background: 'rgba(0, 0, 0, 0.8)',
-                color: 'white',
-                padding: '20px 40px',
-                borderRadius: '8px',
-                fontSize: '16px',
-                fontFamily: 'monospace',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '15px'
-              }}>
-                <div className="spinner" style={{
-                  border: '3px solid rgba(255, 255, 255, 0.3)',
-                  borderTop: '3px solid white',
-                  borderRadius: '50%',
-                  width: '24px',
-                  height: '24px',
-                  animation: 'spin 1s linear infinite'
-                }}></div>
-                <span>Chargement des bâtiments 3D (99 MB)...</span>
-              </div>
-              <style>{`
-                @keyframes spin {
-                  0% { transform: rotate(0deg); }
-                  100% { transform: rotate(360deg); }
-                }
-              `}</style>
-            </Html>
-          }
-        >
-          <Buildings visible={buildingsVisible} />
-        </Suspense>
+        <Buildings 
+          visible={buildingsVisible}
+          onLoadStart={onBuildingsLoadStart}
+          onLoadProgress={onBuildingsLoadProgress}
+          onLoadComplete={onBuildingsLoadComplete}
+        />
       </ErrorBoundary>
 
       {/* Les contrôles de pointeur sont gérés dans le composant Player */}
