@@ -87,6 +87,45 @@ function BuildingsLoader({
 }) {
   // État pour stocker le modèle chargé
   const [obj, setObj] = useState<THREE.Group | null>(null);
+  // État pour stocker la texture chargée
+  const [texture, setTexture] = useState<THREE.Texture | null>(null);
+  
+  // Charger la texture PNG au montage du composant
+  useEffect(() => {
+    let isMounted = true;
+    
+    // Résoudre l'URL de la texture
+    resolveDataUrl('/models/buildings_LHD_FXX_0932_6896_PTS_LAMB93_IGN69_texture_color.png')
+      .then(textureUrl => {
+        console.log('[Buildings] URL résolue pour la texture:', textureUrl);
+        
+        // Charger la texture avec THREE.TextureLoader
+        const textureLoader = new THREE.TextureLoader();
+        textureLoader.load(
+          textureUrl,
+          (loadedTexture) => {
+            if (isMounted) {
+              console.log('[Buildings] Texture chargée avec succès');
+              // Configurer la texture
+              loadedTexture.colorSpace = THREE.SRGBColorSpace;
+              loadedTexture.flipY = false; // Important pour les textures OBJ
+              setTexture(loadedTexture);
+            }
+          },
+          undefined,
+          (error) => {
+            console.error('[Buildings] Erreur lors du chargement de la texture:', error);
+          }
+        );
+      })
+      .catch(error => {
+        console.error('[Buildings] Erreur lors de la résolution de l\'URL de la texture:', error);
+      });
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []);
   
   // Charger le modèle OBJ au montage du composant
   useEffect(() => {
@@ -170,19 +209,46 @@ function BuildingsLoader({
     
     // ÉTAPE 2 : RECENTRER LES VERTICES DIRECTEMENT DANS LES GÉOMÉTRIES
     // C'est la clé pour éliminer les vibrations avec de grandes coordonnées
+    // ET GÉNÉRER LES COORDONNÉES UV POUR LA TEXTURE
     cloned.traverse((child: THREE.Object3D) => {
       if (child instanceof THREE.Mesh && child.geometry) {
         const geometry = child.geometry;
         const positions = geometry.attributes.position;
         
         if (positions) {
+          // Calculer la bounding box de cette géométrie pour les UVs
+          geometry.computeBoundingBox();
+          const geomBox = geometry.boundingBox!;
+          const geomSize = new THREE.Vector3();
+          geomBox.getSize(geomSize);
+          
+          // Créer un array pour les coordonnées UV
+          const uvs = new Float32Array(positions.count * 2);
+          
           // Soustraire le centre LAMB93 de chaque vertex
-          // Cela ramène toutes les coordonnées près de zéro
+          // ET générer les coordonnées UV basées sur la projection planaire (vue du dessus)
           for (let i = 0; i < positions.count; i++) {
-            positions.setX(i, positions.getX(i) - lamb93Center.x);
-            positions.setY(i, positions.getY(i) - lamb93Center.y);
-            positions.setZ(i, positions.getZ(i) - lamb93Center.z);
+            const x = positions.getX(i);
+            const y = positions.getY(i);
+            const z = positions.getZ(i);
+            
+            // Recentrer les positions
+            positions.setX(i, x - lamb93Center.x);
+            positions.setY(i, y - lamb93Center.y);
+            positions.setZ(i, z - lamb93Center.z);
+            
+            // Générer les UVs basés sur les coordonnées LAMB93 originales
+            // Normaliser par rapport à la taille totale du modèle
+            // On utilise les coordonnées X et Y pour une projection planaire
+            const u = (x - flattenedBox.min.x) / size.x;
+            const v = (y - flattenedBox.min.y) / size.y;
+            
+            uvs[i * 2] = u;
+            uvs[i * 2 + 1] = v;
           }
+          
+          // Ajouter les UVs à la géométrie
+          geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
           
           // Indiquer que les positions ont été modifiées
           positions.needsUpdate = true;
@@ -193,21 +259,32 @@ function BuildingsLoader({
         }
         
         // CORRECTION DU Z-FIGHTING : Configurer le matériau
-        // ET appliquer la couleur personnalisée #fcf9e6
-        const customColor = new THREE.Color('#fcf9e6');
+        // ET appliquer la texture ou la couleur personnalisée #fcf9e6
+        const customColor = new THREE.Color('#ffffff'); // Blanc pour ne pas teinter la texture
         const newMaterial = new THREE.MeshStandardMaterial({
-          color: customColor,
+          // Si la texture est chargée, utiliser blanc pour ne pas teinter
+          // Sinon, utiliser la couleur de secours #fcf9e6
+          color: texture ? customColor : new THREE.Color('#fcf9e6'),
+          // Appliquer la texture si elle est chargée
+          map: texture,
+          // Propriétés pour rendre la texture plus lumineuse et réceptive à la lumière
+          roughness: 1.0,        // Surface mate, pas de reflets spéculaires
+          metalness: 0.0,        // Surface non métallique
+          // Ajouter un effet émissif léger pour augmenter la luminosité globale
+          emissive: texture ? new THREE.Color('#ffffff') : new THREE.Color('#000000'),
+          emissiveMap: texture,  // Utiliser la texture comme map émissive
+          emissiveIntensity: 0.3, // Intensité de l'émission (30% de la texture)
           polygonOffset: true,
           polygonOffsetFactor: 1,
           polygonOffsetUnits: 1,
           side: THREE.FrontSide,
-          // Ajouter le flatShading pour un rendu plus propre
-          flatShading: true,
+          // Désactiver flatShading pour que la texture s'affiche correctement
+          flatShading: false,
           // Ajouter le depthTest et depthWrite pour éviter les conflits de depth
           depthTest: true,
           depthWrite: true,
           // Ajouter le transparent et l'opacity pour la transparence
-          transparent: true,
+          transparent: false,
           opacity: 1.0,
           // Ajouter le blending pour le rendu par-dessus
           blending: THREE.NormalBlending,
@@ -259,11 +336,24 @@ function BuildingsLoader({
     console.log('[Buildings] Recentrage terminé:', {
       'Centre LAMB93 original': lamb93Center.toArray(),
       'Centre final (devrait être proche de [0,0,-7])': finalCenter.toArray(),
-      'Taille': finalBox.getSize(new THREE.Vector3()).toArray()
+      'Taille': finalBox.getSize(new THREE.Vector3()).toArray(),
+      'Texture chargée': texture !== null
+    });
+    
+    // Vérifier que les UVs ont été générés
+    cloned.traverse((child: THREE.Object3D) => {
+      if (child instanceof THREE.Mesh && child.geometry) {
+        const hasUVs = child.geometry.attributes.uv !== undefined;
+        console.log('[Buildings] Mesh UV check:', {
+          name: child.name,
+          hasUVs,
+          uvCount: hasUVs ? child.geometry.attributes.uv.count : 0
+        });
+      }
     });
     
     return cloned;
-  }, [obj]);
+  }, [obj, texture]);
 
   // Créer les arêtes directement dans la scène
   useEffect(() => {

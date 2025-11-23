@@ -2082,6 +2082,9 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
   // État pour le mode de couleur
   const [colorMode, setColorMode] = useState<'classification' | 'altitude' | 'natural'>('natural');
   
+  // État pour afficher/masquer le nuage de points
+  const [showPointCloud, setShowPointCloud] = useState<boolean>(false);
+  
   // Seuils de distance pour le LOD dynamique (multiples de la taille du nuage)
   // [très proche, proche, moyen, loin]
   // const [lodDistanceThresholds, setLodDistanceThresholds] = useState<number[]>([0.5, 1.0, 2.0, 4.0]);
@@ -2346,29 +2349,6 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
       view: 'separator'
     });
     
-    // Noms des classifications
-    const classificationNames: { [key: number]: string } = {
-      0: "Non classé",
-      1: "Non classé",
-      2: "Sol",
-      3: "Végétation basse",
-      4: "Végétation moyenne",
-      5: "Arbres",
-      6: "Bâtiments",
-      7: "Bruit bas",
-      8: "Réservé",
-      9: "Eau",
-      10: "Rail",
-      11: "Routes",
-      12: "Réservé",
-      13: "Wire Guard",
-      14: "Wire Conductor",
-      15: "Tour transmission",
-      16: "Wire Connector",
-      17: "Ponts",
-      18: "Bruit élevé",
-    };
-    
     // Ajouter un dossier pour les paramètres EDL
     const edlFolder = (pane as unknown as { addFolder: (config: { title: string; expanded: boolean }) => unknown }).addFolder({
       title: 'Eye-Dome Lighting (EDL)',
@@ -2463,40 +2443,16 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
       view: 'separator'
     });
     
-    // Ajouter un dossier pour les classifications
-    const classFolder = (pane as unknown as { addFolder: (config: { title: string; expanded: boolean }) => unknown }).addFolder({
-      title: 'Classifications',
-      expanded: true,
-    });
+    // Ajouter un toggle simple pour afficher/masquer le nuage de points
+    const pointCloudVisibilityParams = {
+      visible: showPointCloud
+    };
     
-    // Créer un objet pour gérer l'état des checkboxes
-    const checkboxState: { [key: string]: boolean } = {};
-    pointData.availableClassifications.forEach(classId => {
-      checkboxState[`class_${classId}`] = true;
+    (pane as unknown as { addBinding: (obj: Record<string, boolean>, key: string, options?: Record<string, unknown>) => { on: (event: string, handler: (ev: { value: boolean }) => void) => void } }).addBinding(pointCloudVisibilityParams, 'visible', {
+      label: 'Afficher nuage de points'
+    }).on('change', (ev: { value: boolean }) => {
+      setShowPointCloud(ev.value);
     });
-    
-    // Ajouter des checkboxes pour chaque classification disponible
-    pointData.availableClassifications.forEach(classId => {
-      const name = classificationNames[classId] || `Classe ${classId}`;
-      const key = `class_${classId}`;
-      
-      (classFolder as unknown as { addBinding: (obj: Record<string, boolean>, key: string, options: { label: string }) => { on: (event: string, handler: (ev: { value: boolean }) => void) => void } }).addBinding(checkboxState, key, {
-        label: `${classId}: ${name}`
-      }).on('change', (ev: { value: boolean }) => {
-        setVisibleClassifications(prev => {
-          const newSet = new Set(prev);
-          if (ev.value) {
-            newSet.add(classId);
-          } else {
-            newSet.delete(classId);
-          }
-          return newSet;
-        });
-      });
-    });
-    
-    // Note: Les boutons nécessitent le plugin @tweakpane/plugin-essentials
-    // Pour l'instant, utilisez les checkboxes individuellement
     
     // Nettoyer le panneau lors du démontage
     return () => {
@@ -2821,6 +2777,7 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
                   onBuildingsLoadStart={handleBuildingsLoadStart}
                   onBuildingsLoadProgress={handleBuildingsLoadProgress}
                   onBuildingsLoadComplete={handleBuildingsLoadComplete}
+                  showPointCloud={showPointCloud}
                   // showCollisionGrid={showCollisionGrid}
                 />
                 <Player 

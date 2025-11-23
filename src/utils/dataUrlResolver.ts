@@ -125,7 +125,8 @@ export async function resolveDataUrl(relativePath: string): Promise<string> {
   const githubReleasesPattern = /github\.com\/.*\/releases\/download\//i;
   const isGitHubReleases = githubReleasesPattern.test(baseUrl);
   
-  // Détecter Cloudflare R2 (optionnel - pour utiliser uniquement le nom de fichier)
+  // Détecter Cloudflare R2
+  // R2 supporte les chemins de dossiers via le worker, donc on conserve le chemin complet
   const isCloudflareR2 =
     baseUrl.includes('.r2.dev') ||
     baseUrl.includes('r2.cloudflarestorage.com') ||
@@ -134,10 +135,16 @@ export async function resolveDataUrl(relativePath: string): Promise<string> {
   console.log(`Résolution URL: baseUrl="${baseUrl}", isGitHubReleases=${isGitHubReleases}, isR2=${isCloudflareR2}, relativePath="${relativePath}"`);
   
   let filePath: string;
-  if (isGitHubReleases || isCloudflareR2) {
-    // Pour GitHub Releases et R2 : utiliser uniquement le nom du fichier
+  if (isGitHubReleases) {
+    // Pour GitHub Releases uniquement : utiliser uniquement le nom du fichier
     filePath = extractFileName(relativePath);
-    console.log(`${isGitHubReleases ? 'GitHub Releases' : 'Cloudflare R2'}: ${relativePath} -> ${filePath}`);
+    console.log(`GitHub Releases: ${relativePath} -> ${filePath}`);
+  } else if (isCloudflareR2) {
+    // Pour Cloudflare R2 : conserver le chemin complet (sans le slash initial)
+    // Le worker R2 supporte les chemins de dossiers
+    const cleanPath = relativePath.startsWith('/') ? relativePath.slice(1) : relativePath;
+    filePath = cleanPath;
+    console.log(`Cloudflare R2: ${relativePath} -> ${filePath}`);
   } else {
     // Pour les autres sources (S3, GCS avec structure de dossiers), garder le chemin complet
     const cleanPath = relativePath.startsWith('/') ? relativePath.slice(1) : relativePath;
@@ -190,7 +197,8 @@ export async function resolveDataUrls(relativePaths: string[]): Promise<string[]
     ? config.dataBaseUrl.slice(0, -1) 
     : config.dataBaseUrl;
 
-  // Pour GitHub Releases et Cloudflare R2, utiliser uniquement le nom du fichier
+  // Pour GitHub Releases, utiliser uniquement le nom du fichier
+  // Pour Cloudflare R2, conserver le chemin complet (le worker supporte les dossiers)
   const githubReleasesPattern = /github\.com\/.*\/releases\/download\//i;
   const isGitHubReleases = githubReleasesPattern.test(baseUrl);
   const isCloudflareR2 =
@@ -200,8 +208,13 @@ export async function resolveDataUrls(relativePaths: string[]): Promise<string[]
 
   return relativePaths.map(path => {
     let filePath: string;
-    if (isGitHubReleases || isCloudflareR2) {
+    if (isGitHubReleases) {
+      // Pour GitHub Releases uniquement : utiliser uniquement le nom du fichier
       filePath = extractFileName(path);
+    } else if (isCloudflareR2) {
+      // Pour Cloudflare R2 : conserver le chemin complet (sans le slash initial)
+      const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+      filePath = cleanPath;
     } else {
       // Pour les autres sources (S3, GCS avec structure de dossiers), garder le chemin complet
       const cleanPath = path.startsWith('/') ? path.slice(1) : path;

@@ -45,6 +45,7 @@ interface WorldProps {
   onBuildingsLoadStart: () => void;
   onBuildingsLoadProgress: (progress: number) => void;
   onBuildingsLoadComplete: () => void;
+  showPointCloud: boolean;
   // showCollisionGrid: boolean;
 }
 
@@ -70,6 +71,7 @@ export function World({
   onBuildingsLoadStart,
   onBuildingsLoadProgress,
   onBuildingsLoadComplete,
+  showPointCloud,
   // showCollisionGrid,
 }: WorldProps) {
   const { camera } = useThree();
@@ -108,13 +110,13 @@ export function World({
       {/* Lumière directionnelle */}
       <directionalLight 
         position={[100, 100, 100]}
-        intensity={1.2}
+        intensity={1.5}
         color="#ffffff"
         castShadow={false}
       />
       
-      {/* Lumière ambiante */}
-      <ambientLight intensity={0.3} color="#ffffff" />
+      {/* Lumière ambiante - augmentée pour mieux éclairer les textures */}
+      <ambientLight intensity={0.6} color="#ffffff" />
 
       {/* AxesHelper pour visualiser les axes */}
       <axesHelper args={[10]} />
@@ -170,7 +172,7 @@ export function World({
       />
 
       {/* Rendu dynamique des nodes */}
-      {pointData && metadataLoaded && (
+      {pointData && metadataLoaded && showPointCloud && (
         <DynamicNodeRenderer
           nodesToRenderKeys={nodesToRenderKeys}
           allNodes={nodesToRender}
