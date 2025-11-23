@@ -445,7 +445,7 @@ export function Buildings({
   
   useEffect(() => {
     // Résoudre l'URL du fichier OBJ
-    resolveDataUrl('/models/buildings_LHD_FXX_0932_6896_PTS_LAMB93_IGN69.obj')
+    resolveDataUrl('/models/buildings_LHD_FXX_0932_6896_PTS_LAMB93_IGN69_v2.obj')
       .then(url => {
         console.log('[Buildings] URL résolue pour le modèle OBJ:', url);
         setObjUrl(url);
