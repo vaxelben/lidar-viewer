@@ -273,7 +273,7 @@ function BuildingsLoader({
           // Ajouter un effet émissif léger pour augmenter la luminosité globale
           emissive: texture ? new THREE.Color('#ffffff') : new THREE.Color('#000000'),
           emissiveMap: texture,  // Utiliser la texture comme map émissive
-          emissiveIntensity: 0.3, // Intensité de l'émission (30% de la texture)
+          emissiveIntensity: 0.8, // Intensité de l'émission (30% de la texture)
           polygonOffset: true,
           polygonOffsetFactor: 1,
           polygonOffsetUnits: 1,
