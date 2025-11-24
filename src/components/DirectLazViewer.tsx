@@ -2077,7 +2077,7 @@ const DirectLazViewer: React.FC<DirectLazViewerProps> = ({
   // const [showCollisionGrid, setShowCollisionGrid] = useState<boolean>(false);
   
   // État pour le mode zero gravity
-  const [zeroGravity, setZeroGravity] = useState<boolean>(false);
+  const [zeroGravity, setZeroGravity] = useState<boolean>(true);
   
   // État pour le mode de couleur
   const [colorMode, setColorMode] = useState<'classification' | 'altitude' | 'natural'>('natural');
