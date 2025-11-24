@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { OBJLoader } from 'three-stdlib';
 import { RigidBody, TrimeshCollider } from '@react-three/rapier';
 import * as THREE from 'three';
@@ -13,17 +13,108 @@ interface BuildingsProps {
   onLoadStart?: () => void;
   onLoadProgress?: (progress: number) => void;
   onLoadComplete?: () => void;
+  assets?: BuildingAssetConfig[];
+}
+
+interface BuildingAssetConfig {
+  id: string;
+  objPath: string;
+  texturePath: string;
+  visible?: boolean;
+  showEdges?: boolean;
+  edgeColor?: string;
+  edgeThickness?: number;
+}
+
+interface ResolvedBuildingAsset extends BuildingAssetConfig {
+  objUrl: string;
+  textureUrl: string;
 }
 
 // Cache global pour le modèle OBJ chargé
 const modelCache = new Map<string, THREE.Group>();
 const loadingPromises = new Map<string, Promise<THREE.Group>>();
 
+// Fonction de throttling pour limiter la fréquence des mises à jour de progression
+function createThrottledProgress(onProgress?: (progress: number) => void): (progress: number) => void {
+  if (!onProgress) return () => {};
+  
+  let lastProgress = -1;
+  let lastUpdateTime = 0;
+  let rafId: number | null = null;
+  let pendingProgress: number | null = null;
+  
+  const THROTTLE_MS = 500; // Maximum une mise à jour toutes les 500ms
+  const MIN_PROGRESS_DELTA = 0.1; // Minimum 10% de changement pour mettre à jour
+  
+  const updateProgress = (progress: number) => {
+    // Toujours notifier la progression finale
+    if (progress === 1.0) {
+      lastProgress = 1.0;
+      lastUpdateTime = Date.now();
+      pendingProgress = null;
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      onProgress(1.0);
+      return;
+    }
+    
+    const now = Date.now();
+    const progressDelta = Math.abs(progress - lastProgress);
+    const timeDelta = now - lastUpdateTime;
+    
+    // Mettre à jour immédiatement si :
+    // 1. Le progrès a changé de plus de 10%
+    // 2. OU si plus de 500ms se sont écoulées depuis la dernière mise à jour
+    if (progressDelta >= MIN_PROGRESS_DELTA || timeDelta >= THROTTLE_MS) {
+      lastProgress = progress;
+      lastUpdateTime = now;
+      pendingProgress = null;
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      onProgress(progress);
+    } else {
+      // Stocker la progression en attente pour un traitement différé
+      pendingProgress = progress;
+      
+      // Utiliser requestAnimationFrame pour limiter à une fois par frame
+      if (rafId === null) {
+        rafId = requestAnimationFrame(() => {
+          rafId = null;
+          const currentTime = Date.now();
+          const elapsed = currentTime - lastUpdateTime;
+          
+          if (pendingProgress !== null && elapsed >= THROTTLE_MS) {
+            const p = pendingProgress;
+            pendingProgress = null;
+            lastProgress = p;
+            lastUpdateTime = currentTime;
+            onProgress(p);
+          }
+        });
+      }
+    }
+  };
+  
+  return updateProgress;
+}
+
 // Fonction pour charger le modèle OBJ manuellement
 async function loadOBJModel(url: string, onProgress?: (progress: number) => void): Promise<THREE.Group> {
   // Vérifier le cache
   if (modelCache.has(url)) {
     console.log('[Buildings] Modèle récupéré du cache:', url);
+    // Notifier que le chargement est complet (100%) même si c'est depuis le cache
+    if (onProgress) {
+      // Utiliser setTimeout pour s'assurer que le callback est appelé de manière asynchrone
+      setTimeout(() => {
+        onProgress(1.0);
+      }, 0);
+    }
     return modelCache.get(url)!;
   }
   
@@ -33,28 +124,158 @@ async function loadOBJModel(url: string, onProgress?: (progress: number) => void
     return loadingPromises.get(url)!;
   }
   
+  // Créer une fonction de progression throttlée
+  const throttledProgress = createThrottledProgress(onProgress);
+  
+  // Variables pour suivre le chargement
+  const startTime = Date.now();
+  let lastLoggedProgress = -1;
+  
   // Créer une nouvelle promesse de chargement
   const loadingPromise = new Promise<THREE.Group>((resolve, reject) => {
     const loader = new OBJLoader();
     
     console.log('[Buildings] Début du chargement du modèle OBJ:', url);
+    console.log('[Buildings] Temps de début:', new Date().toISOString());
     
     loader.load(
       url,
       (object) => {
+        const loadTime = Date.now() - startTime;
         console.log('[Buildings] Modèle OBJ chargé avec succès');
+        console.log('[Buildings] Temps de chargement:', loadTime, 'ms');
+        console.log('[Buildings] Type de l\'objet:', object.type);
+        console.log('[Buildings] Nombre d\'enfants directs:', object.children.length);
+        
+        // Analyser la structure complète de l'objet
+        let meshCount = 0;
+        let groupCount = 0;
+        let lineCount = 0;
+        let pointsCount = 0;
+        let totalVertices = 0;
+        const structure: Array<{
+          type: string;
+          name: string;
+          visible: boolean;
+          children: number;
+          vertices?: number;
+          hasNormals?: boolean;
+          hasUVs?: boolean;
+          material?: string;
+        }> = [];
+        
+        object.traverse((child) => {
+          const childInfo: {
+            type: string;
+            name: string;
+            visible: boolean;
+            children: number;
+            vertices?: number;
+            hasNormals?: boolean;
+            hasUVs?: boolean;
+            material?: string;
+          } = {
+            type: child.type,
+            name: child.name,
+            visible: child.visible,
+            children: child.children.length
+          };
+          
+          if (child instanceof THREE.Mesh) {
+            meshCount++;
+            const geometry = child.geometry;
+            if (geometry) {
+              const positions = geometry.attributes.position;
+              if (positions) {
+                totalVertices += positions.count;
+                childInfo.vertices = positions.count;
+                childInfo.hasNormals = geometry.attributes.normal !== undefined;
+                childInfo.hasUVs = geometry.attributes.uv !== undefined;
+              }
+            }
+            if (child.material) {
+              childInfo.material = Array.isArray(child.material) 
+                ? child.material.map((m: THREE.Material) => m.type).join(', ')
+                : child.material.type;
+            }
+          } else if (child instanceof THREE.Group) {
+            groupCount++;
+          } else if (child instanceof THREE.LineSegments) {
+            lineCount++;
+          } else if (child instanceof THREE.Points) {
+            pointsCount++;
+          }
+          
+          structure.push(childInfo);
+        });
+        
+        console.log('[Buildings] Analyse de la structure:');
+        console.log('[Buildings]   - Meshes:', meshCount);
+        console.log('[Buildings]   - Groups:', groupCount);
+        console.log('[Buildings]   - Lines:', lineCount);
+        console.log('[Buildings]   - Points:', pointsCount);
+        console.log('[Buildings]   - Total vertices:', totalVertices.toLocaleString('fr-FR'));
+        console.log('[Buildings] Structure complète:', structure);
+        
+        // Si aucun mesh n'est trouvé, c'est un problème critique
+        if (meshCount === 0) {
+          console.error('[Buildings] ❌ ERREUR: Aucun mesh trouvé dans le modèle OBJ!');
+          console.error('[Buildings] Le fichier OBJ a été chargé mais le parsing a échoué.');
+          console.error('[Buildings] Enfants directs:', object.children.map(c => ({
+            type: c.type,
+            name: c.name,
+            constructor: c.constructor.name
+          })));
+          console.error('[Buildings] Cela peut être dû à:');
+          console.error('[Buildings]   1. Fichier OBJ trop volumineux (>500MB peut causer des problèmes)');
+          console.error('[Buildings]   2. Format OBJ invalide ou corrompu');
+          console.error('[Buildings]   3. Limitation mémoire du navigateur');
+          console.error('[Buildings]   4. Le parser OBJLoader ne peut pas gérer ce fichier');
+          
+          // Rejeter la promesse pour signaler l'erreur
+          loadingPromises.delete(url);
+          reject(new Error('Le fichier OBJ a été chargé mais aucun mesh n\'a été trouvé. Le parsing a probablement échoué.'));
+          return;
+        }
+        
+        // Assurer que la progression finale est toujours notifiée
+        if (onProgress) {
+          onProgress(1.0);
+        }
         modelCache.set(url, object);
         loadingPromises.delete(url);
         resolve(object);
       },
       (progressEvent) => {
-        if (progressEvent.lengthComputable && onProgress) {
+        if (progressEvent.lengthComputable) {
           const progress = progressEvent.loaded / progressEvent.total;
-          onProgress(progress);
+          const bytesLoaded = progressEvent.loaded;
+          const bytesTotal = progressEvent.total;
+          
+          // Logger la progression tous les 10%
+          const progressPercent = Math.floor(progress * 100);
+          if (progressPercent % 10 === 0 && progressPercent !== lastLoggedProgress) {
+            lastLoggedProgress = progressPercent;
+            const elapsed = Date.now() - startTime;
+            const speed = bytesLoaded / elapsed; // bytes/ms
+            const remaining = bytesTotal - bytesLoaded;
+            const estimatedTimeRemaining = remaining / speed; // ms
+            
+            console.log(`[Buildings] Progression: ${progressPercent}% (${(bytesLoaded / 1024 / 1024).toFixed(2)} MB / ${(bytesTotal / 1024 / 1024).toFixed(2)} MB)`);
+            console.log(`[Buildings] Vitesse: ${(speed * 1000 / 1024 / 1024).toFixed(2)} MB/s, Temps restant estimé: ${(estimatedTimeRemaining / 1000).toFixed(1)}s`);
+          }
+          
+          throttledProgress(progress);
+        } else {
+          // Si lengthComputable est false, on ne peut pas calculer la progression exacte
+          // Mais on peut quand même notifier une progression approximative
+          console.log('[Buildings] Progression non calculable, chargement en cours...');
         }
       },
       (error) => {
+        const loadTime = Date.now() - startTime;
         console.error('[Buildings] Erreur lors du chargement du modèle OBJ:', error);
+        console.error('[Buildings] Temps écoulé avant l\'erreur:', loadTime, 'ms');
         loadingPromises.delete(url);
         reject(error);
       }
@@ -68,19 +289,23 @@ async function loadOBJModel(url: string, onProgress?: (progress: number) => void
 // Composant interne qui charge le modèle une fois l'URL résolue
 function BuildingsLoader({ 
   objUrl,
+  textureUrl,
   visible,
   showEdges,
   edgeColor,
   edgeThickness,
+  globalOriginRef,
   onLoadStart,
   onLoadProgress,
   onLoadComplete
 }: { 
   objUrl: string;
+  textureUrl: string;
   visible: boolean;
   showEdges: boolean;
   edgeColor: string;
   edgeThickness: number;
+  globalOriginRef: React.MutableRefObject<THREE.Vector3 | null>;
   onLoadStart?: () => void;
   onLoadProgress?: (progress: number) => void;
   onLoadComplete?: () => void;
@@ -89,71 +314,116 @@ function BuildingsLoader({
   const [obj, setObj] = useState<THREE.Group | null>(null);
   // État pour stocker la texture chargée
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
+  // État pour suivre si le modèle OBJ est chargé
+  const [objLoaded, setObjLoaded] = useState<boolean>(false);
+  // État pour suivre si la texture est chargée
+  const [textureLoaded, setTextureLoaded] = useState<boolean>(false);
+  
+  // Utiliser useRef pour stocker les callbacks et éviter les re-renders
+  const callbacksRef = useRef({ onLoadStart, onLoadProgress, onLoadComplete });
+  
+  // Mettre à jour les refs quand les callbacks changent
+  useEffect(() => {
+    callbacksRef.current = { onLoadStart, onLoadProgress, onLoadComplete };
+  }, [onLoadStart, onLoadProgress, onLoadComplete]);
   
   // Charger la texture PNG au montage du composant
   useEffect(() => {
-    let isMounted = true;
+    if (!textureUrl) return;
     
-    // Résoudre l'URL de la texture
-    resolveDataUrl('/models/buildings_LHD_FXX_0932_6896_PTS_LAMB93_IGN69_texture_color.png')
-      .then(textureUrl => {
-        console.log('[Buildings] URL résolue pour la texture:', textureUrl);
-        
-        // Charger la texture avec THREE.TextureLoader
-        const textureLoader = new THREE.TextureLoader();
-        textureLoader.load(
-          textureUrl,
-          (loadedTexture) => {
-            if (isMounted) {
-              console.log('[Buildings] Texture chargée avec succès');
-              // Configurer la texture
-              loadedTexture.colorSpace = THREE.SRGBColorSpace;
-              loadedTexture.flipY = false; // Important pour les textures OBJ
-              setTexture(loadedTexture);
-            }
-          },
-          undefined,
-          (error) => {
-            console.error('[Buildings] Erreur lors du chargement de la texture:', error);
-          }
-        );
-      })
-      .catch(error => {
-        console.error('[Buildings] Erreur lors de la résolution de l\'URL de la texture:', error);
-      });
+    let isMounted = true;
+    const textureStartTime = Date.now();
+    
+    console.log('[Buildings] Début du chargement de la texture PNG');
+    console.log('[Buildings] URL texture:', textureUrl);
+    console.log('[Buildings] Temps de début texture:', new Date().toISOString());
+    
+    // Charger la texture avec THREE.TextureLoader
+    const textureLoader = new THREE.TextureLoader();
+    textureLoader.load(
+      textureUrl,
+      (loadedTexture) => {
+        if (isMounted) {
+          const textureLoadTime = Date.now() - textureStartTime;
+          console.log('[Buildings] Texture chargée avec succès');
+          console.log('[Buildings] Temps de chargement texture:', textureLoadTime, 'ms');
+          console.log('[Buildings] Taille de la texture:', loadedTexture.image ? `${loadedTexture.image.width}x${loadedTexture.image.height}` : 'inconnue');
+          
+          // Configurer la texture
+          loadedTexture.colorSpace = THREE.SRGBColorSpace;
+          loadedTexture.flipY = false; // Important pour les textures OBJ
+          setTexture(loadedTexture);
+          setTextureLoaded(true);
+        }
+      },
+      (progressEvent) => {
+        if (progressEvent.lengthComputable) {
+          const progress = progressEvent.loaded / progressEvent.total;
+          const progressPercent = Math.floor(progress * 100);
+          console.log(`[Buildings] Progression texture: ${progressPercent}% (${(progressEvent.loaded / 1024 / 1024).toFixed(2)} MB / ${(progressEvent.total / 1024 / 1024).toFixed(2)} MB)`);
+        }
+      },
+      (error) => {
+        const textureLoadTime = Date.now() - textureStartTime;
+        console.error('[Buildings] Erreur lors du chargement de la texture:', error);
+        console.error('[Buildings] Temps écoulé avant l\'erreur texture:', textureLoadTime, 'ms');
+        // Même en cas d'erreur, marquer comme chargé pour ne pas bloquer l'affichage
+        if (isMounted) {
+          setTextureLoaded(true);
+        }
+      }
+    );
     
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [textureUrl]);
   
   // Charger le modèle OBJ au montage du composant
   useEffect(() => {
     let isMounted = true;
     
-    if (onLoadStart) {
-      onLoadStart();
+    if (callbacksRef.current.onLoadStart) {
+      callbacksRef.current.onLoadStart();
     }
     
-    loadOBJModel(objUrl, onLoadProgress)
+    loadOBJModel(objUrl, callbacksRef.current.onLoadProgress)
       .then((loadedObj) => {
         if (isMounted) {
           setObj(loadedObj);
-          if (onLoadComplete) {
-            onLoadComplete();
-          }
+          setObjLoaded(true);
         }
       })
       .catch((error) => {
         console.error('[Buildings] Erreur lors du chargement:', error);
+        // Même en cas d'erreur, marquer comme chargé pour ne pas bloquer indéfiniment
+        if (isMounted) {
+          setObjLoaded(true);
+        }
       });
     
     return () => {
       isMounted = false;
     };
-  }, [objUrl, onLoadStart, onLoadProgress, onLoadComplete]);
+  }, [objUrl]); // Seulement objUrl dans les dépendances
+  
+  // Appeler onLoadComplete uniquement quand les deux sont chargés
+  useEffect(() => {
+    if (objLoaded && textureLoaded && callbacksRef.current.onLoadComplete) {
+      console.log('[Buildings] Modèle OBJ et texture PNG chargés, chargement complet');
+      callbacksRef.current.onLoadComplete();
+    }
+  }, [objLoaded, textureLoaded]);
 
   // Cloner l'objet pour éviter les problèmes de réutilisation
+  // Utiliser useRef pour stocker la texture et éviter de recréer la scène quand elle change
+  const textureRef = useRef<THREE.Texture | null>(null);
+  
+  // Mettre à jour la ref quand la texture change
+  useEffect(() => {
+    textureRef.current = texture;
+  }, [texture]);
+  
   const clonedScene = React.useMemo(() => {
     if (!obj) return null;
     
@@ -205,7 +475,14 @@ function BuildingsLoader({
     const flattenedBox = new THREE.Box3().setFromObject(cloned);
     const lamb93Center = flattenedBox.getCenter(new THREE.Vector3());
     
-    console.log('[Buildings] Centre LAMB93 à soustraire:', lamb93Center.toArray());
+    if (!globalOriginRef.current) {
+      globalOriginRef.current = lamb93Center.clone();
+      console.log('[Buildings] Origine globale initialisée:', globalOriginRef.current.toArray());
+    }
+    
+    const globalOrigin = globalOriginRef.current.clone();
+    
+    console.log('[Buildings] Centre global à soustraire:', globalOrigin.toArray());
     
     // ÉTAPE 2 : RECENTRER LES VERTICES DIRECTEMENT DANS LES GÉOMÉTRIES
     // C'est la clé pour éliminer les vibrations avec de grandes coordonnées
@@ -233,9 +510,9 @@ function BuildingsLoader({
             const z = positions.getZ(i);
             
             // Recentrer les positions
-            positions.setX(i, x - lamb93Center.x);
-            positions.setY(i, y - lamb93Center.y);
-            positions.setZ(i, z - lamb93Center.z);
+            positions.setX(i, x - globalOrigin.x);
+            positions.setY(i, y - globalOrigin.y);
+            positions.setZ(i, z - globalOrigin.z);
             
             // Générer les UVs basés sur les coordonnées LAMB93 originales
             // Normaliser par rapport à la taille totale du modèle
@@ -260,19 +537,21 @@ function BuildingsLoader({
         
         // CORRECTION DU Z-FIGHTING : Configurer le matériau
         // ET appliquer la texture ou la couleur personnalisée #fcf9e6
+        // Utiliser textureRef.current pour éviter de dépendre de texture dans useMemo
+        const currentTexture = textureRef.current;
         const customColor = new THREE.Color('#ffffff'); // Blanc pour ne pas teinter la texture
         const newMaterial = new THREE.MeshStandardMaterial({
           // Si la texture est chargée, utiliser blanc pour ne pas teinter
           // Sinon, utiliser la couleur de secours #fcf9e6
-          color: texture ? customColor : new THREE.Color('#fcf9e6'),
+          color: currentTexture ? customColor : new THREE.Color('#fcf9e6'),
           // Appliquer la texture si elle est chargée
-          map: texture,
+          map: currentTexture,
           // Propriétés pour rendre la texture plus lumineuse et réceptive à la lumière
           roughness: 1.0,        // Surface mate, pas de reflets spéculaires
           metalness: 0.0,        // Surface non métallique
           // Ajouter un effet émissif léger pour augmenter la luminosité globale
-          emissive: texture ? new THREE.Color('#ffffff') : new THREE.Color('#000000'),
-          emissiveMap: texture,  // Utiliser la texture comme map émissive
+          emissive: currentTexture ? new THREE.Color('#ffffff') : new THREE.Color('#000000'),
+          emissiveMap: currentTexture,  // Utiliser la texture comme map émissive
           emissiveIntensity: 0.8, // Intensité de l'émission (30% de la texture)
           polygonOffset: true,
           polygonOffsetFactor: 1,
@@ -301,9 +580,9 @@ function BuildingsLoader({
       }
     });
     
-    // ÉTAPE 3 : Appliquer une petite translation pour positionner dans la scène
-    // Les vertices sont maintenant centrés à l'origine, on peut appliquer une petite translation
-    cloned.position.set(0, 0, -7);
+    // ÉTAPE 3 : Positionner le mesh à l'origine (les vertices sont déjà recentrés)
+    // Dans un système Z-up, le mesh doit être à Z=0 pour être visible depuis la caméra
+    cloned.position.set(0, 0, 0);
     
     // OBJET STATIQUE : Désactiver matrixAutoUpdate pour éliminer les vibrations
     // Les matrices seront calculées UNE SEULE FOIS et figées
@@ -335,9 +614,12 @@ function BuildingsLoader({
     
     console.log('[Buildings] Recentrage terminé:', {
       'Centre LAMB93 original': lamb93Center.toArray(),
-      'Centre final (devrait être proche de [0,0,-7])': finalCenter.toArray(),
+      'Origine globale': globalOrigin.toArray(),
+      'Centre final (devrait être proche de [0,0,0])': finalCenter.toArray(),
+      'Position du mesh': cloned.position.toArray(),
       'Taille': finalBox.getSize(new THREE.Vector3()).toArray(),
-      'Texture chargée': texture !== null
+      'Texture chargée': textureRef.current !== null,
+      'Nombre de meshes': cloned.children.filter(c => c instanceof THREE.Mesh).length
     });
     
     // Vérifier que les UVs ont été générés
@@ -353,7 +635,23 @@ function BuildingsLoader({
     });
     
     return cloned;
-  }, [obj, texture]);
+  }, [obj, globalOriginRef]); // Recalcule si l'objet source change
+
+  // Appliquer la texture aux matériaux existants sans recréer la scène
+  useEffect(() => {
+    if (!clonedScene || !texture) return;
+    
+    clonedScene.traverse((child: THREE.Object3D) => {
+      if (child instanceof THREE.Mesh && child.material) {
+        const material = child.material as THREE.MeshStandardMaterial;
+        if (material.isMeshStandardMaterial) {
+          material.map = texture;
+          material.emissiveMap = texture;
+          material.needsUpdate = true;
+        }
+      }
+    });
+  }, [texture, clonedScene]);
 
   // Créer les arêtes directement dans la scène
   useEffect(() => {
@@ -496,8 +794,21 @@ function BuildingsLoader({
     }
   }, [clonedScene]);
 
-  // Ne rien afficher si le modèle n'est pas chargé ou si pas visible
-  if (!visible || !clonedScene) {
+  // Log de débogage pour vérifier que le mesh est rendu
+  useEffect(() => {
+    if (clonedScene) {
+      console.log('[Buildings] Rendu du mesh:', {
+        position: clonedScene.position.toArray(),
+        visible: clonedScene.visible,
+        childrenCount: clonedScene.children.length,
+        meshCount: clonedScene.children.filter(c => c instanceof THREE.Mesh).length
+      });
+    }
+  }, [clonedScene]);
+
+  // Ne rien afficher si le modèle n'est pas chargé, si la texture n'est pas chargée, ou si pas visible
+  // Attendre que les deux soient chargés avant d'afficher
+  if (!visible || !clonedScene || !objLoaded || !textureLoaded) {
     return null;
   }
 
@@ -528,40 +839,118 @@ export function Buildings({
   edgeThickness = 1,
   onLoadStart,
   onLoadProgress,
-  onLoadComplete
+  onLoadComplete,
+  assets
 }: BuildingsProps) {
-  // Résoudre l'URL du fichier OBJ (local en dev, R2 en prod)
-  const [objUrl, setObjUrl] = useState<string | null>(null);
-  
+  const globalOriginRef = useRef<THREE.Vector3 | null>(null);
+  const defaultAssets = useMemo<BuildingAssetConfig[]>(() => ([
+    {
+      id: 'tile_0931_6895',
+      objPath: '/models/buildings_LHD_FXX_0931_6895_PTS_LAMB93_IGN69_v2.obj',
+      texturePath: '/models/buildings_LHD_FXX_0931_6895_PTS_LAMB93_IGN69_texture_color.png'
+    },
+    {
+      id: 'tile_0931_6896',
+      objPath: '/models/buildings_LHD_FXX_0931_6896_PTS_LAMB93_IGN69_v2.obj',
+      texturePath: '/models/buildings_LHD_FXX_0931_6896_PTS_LAMB93_IGN69_texture_color.png'
+    },
+    {
+      id: 'tile_0932_6895',
+      objPath: '/models/buildings_LHD_FXX_0932_6895_PTS_LAMB93_IGN69_v2.obj',
+      texturePath: '/models/buildings_LHD_FXX_0932_6895_PTS_LAMB93_IGN69_texture_color.png'
+    },
+    {
+      id: 'tile_0932_6896',
+      objPath: '/models/buildings_LHD_FXX_0932_6896_PTS_LAMB93_IGN69_v2.obj',
+      texturePath: '/models/buildings_LHD_FXX_0932_6896_PTS_LAMB93_IGN69_texture_color.png'
+    }
+  ]), []);
+
+  const assetConfigs = useMemo(() => {
+    if (assets && assets.length > 0) {
+      return assets;
+    }
+    return defaultAssets;
+  }, [assets, defaultAssets]);
+  const [resolvedAssets, setResolvedAssets] = useState<ResolvedBuildingAsset[]>([]);
+
   useEffect(() => {
-    // Résoudre l'URL du fichier OBJ
-    resolveDataUrl('/models/buildings_LHD_FXX_0932_6896_PTS_LAMB93_IGN69_v2.obj')
-      .then(url => {
-        console.log('[Buildings] URL résolue pour le modèle OBJ:', url);
-        setObjUrl(url);
-      })
-      .catch(error => {
-        console.error('[Buildings] Erreur lors de la résolution de l\'URL du modèle OBJ:', error);
-      });
-  }, []);
+    if (!visible) {
+      setResolvedAssets([]);
+      globalOriginRef.current = null;
+      return;
+    }
+
+    let isMounted = true;
+    globalOriginRef.current = null;
+
+    async function resolveAssetPaths() {
+      try {
+        const resolved = await Promise.all(
+          assetConfigs.map(async (asset) => {
+            const [objUrl, textureUrl] = await Promise.all([
+              resolveDataUrl(asset.objPath),
+              resolveDataUrl(asset.texturePath)
+            ]);
+
+            console.log('[Buildings] URLs résolues pour l\'asset:', asset.id, { objUrl, textureUrl });
+
+            return {
+              ...asset,
+              objUrl,
+              textureUrl
+            };
+          })
+        );
+
+        if (isMounted) {
+          setResolvedAssets(resolved);
+        }
+      } catch (error) {
+        console.error('[Buildings] Erreur lors de la résolution des assets:', error);
+        if (isMounted) {
+          setResolvedAssets([]);
+        }
+      }
+    }
+
+    resolveAssetPaths();
+
+    return () => {
+      isMounted = false;
+      globalOriginRef.current = null;
+    };
+  }, [assetConfigs, visible]);
   
-  // Ne rien afficher tant que l'URL n'est pas résolue ou si pas visible
-  if (!visible || !objUrl) {
+  // Ne rien afficher si pas visible
+  if (!visible) {
     return null;
   }
   
-  // Charger le modèle avec l'URL résolue
+  // Ne rien afficher tant que les URLs ne sont pas résolues
+  if (resolvedAssets.length === 0) {
+    return null;
+  }
+  
+  // Charger tous les modèles avec leurs URLs résolues
   return (
-    <BuildingsLoader 
-      objUrl={objUrl}
-      visible={visible}
-      showEdges={showEdges}
-      edgeColor={edgeColor}
-      edgeThickness={edgeThickness}
-      onLoadStart={onLoadStart}
-      onLoadProgress={onLoadProgress}
-      onLoadComplete={onLoadComplete}
-    />
+    <>
+      {resolvedAssets.map((asset) => (
+        <BuildingsLoader 
+          key={asset.id}
+          objUrl={asset.objUrl}
+          textureUrl={asset.textureUrl}
+          visible={(asset.visible ?? true) && visible}
+          showEdges={asset.showEdges ?? showEdges}
+          edgeColor={asset.edgeColor ?? edgeColor}
+          edgeThickness={asset.edgeThickness ?? edgeThickness}
+          globalOriginRef={globalOriginRef}
+          onLoadStart={onLoadStart}
+          onLoadProgress={onLoadProgress}
+          onLoadComplete={onLoadComplete}
+        />
+      ))}
+    </>
   );
 }
 
